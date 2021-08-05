@@ -17,10 +17,15 @@
 ## Execution
 
 To execute demo:
-```python 
-python pie.py serve -c demo/demo.yaml
-python pie.py deploy -c demo/demo.yaml
+```shell 
+python pie.py serve -c blog/blog.yaml
 ```
+
+
+
+After successfull execution of serve you should see screen similar to bylow:
+
+<img src="serve_output.png" />
 
 ## Configuration
 The webside configuration should be written in YAML language and contain following elements:
