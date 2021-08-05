@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.84.0">
+    <title>Blog Template · Bootstrap v5.0</title>
+
+    <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/blog/">
+
+    <link rel="stylesheet" href="/assets/zenburn.min.css">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script src="/assets/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <!-- Bootstrap core CSS -->
+<link href="/assets/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+
+    
+    <!-- Custom styles for this template -->
+    <link href="https://fonts.googleapis.com/css?family=Playfair&#43;Display:700,900&amp;display=swap" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="/blog.css" rel="stylesheet">
+  </head>
+  <body>
+    
+<div class="container">
+  <header class="blog-header py-3">
+    <div class="row flex-nowrap justify-content-between align-items-center">
+      <div class="text-center">
+        <a class="blog-header-logo text-dark" href="#">Large</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="nav-scroller py-1 mb-2">
+    <nav class="nav text-center align-items-center">
+      {%- for item in config.menu %}
+      {% if meta.menu is defined and meta.menu.label is defined and item.label == meta.menu.label %}
+      <a class="p-2 link-secondary m-auto" href="{{config.PROTOCOL}}{{ item.route }}"><strong>{{ item.label }}</strong></a>
+      {% else %}
+      <a class="p-2 link-secondary m-auto" href="{{config.PROTOCOL}}{{ item.route }}">{{ item.label }}</a>
+      {% endif %}
+      {%- endfor %}
+    </nav>
+  </div>
+</div>
+
+<main class="container">
+  <div class="p-4 p-md-5 mb-4 text-white rounded bg-dark">
+    <div class="col-md-6 px-0">
+      <h1 class="display-4 fst-italic">This is a blog demo</h1>
+      <p class="lead my-3">Some text about this blog.</p>
+    </div>
+  </div>
+
+  <div class="row mb-2">
+
+
+{%- if config["most_recent"]|length > 1 %}
+    <div class="col-md-6">
+      <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
+        <div class="col p-4 d-flex flex-column position-static">
+          <strong class="d-inline-block mb-2 text-primary">World</strong>
+          <h3 class="mb-0">{{config["most_recent"][0]["title"]}}</h3>
+          <div class="mb-1 text-muted">{{config["most_recent"][0]["date"]}}</div>
+          <p class="card-text mb-auto">{{config["most_recent"][0]["summary"]}}</p>
+          <a href="{{config['PROTOCOL']}}{{config['most_recent'][0]['route']}}" class="stretched-link">Continue reading</a>
+        </div>
+        <div class="col-auto d-none d-lg-block">
+          <svg class="bd-placeholder-img" width="200" height="250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: Thumbnail" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#55595c"/><text x="50%" y="50%" fill="#eceeef" dy=".3em">Thumbnail</text></svg>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
+        <div class="col p-4 d-flex flex-column position-static">
+          <strong class="d-inline-block mb-2 text-primary">World</strong>
+          <h3 class="mb-0">{{config["most_recent"][1]["title"]}}</h3>
+          <div class="mb-1 text-muted">{{config["most_recent"][1]["date"]}}</div>
+          <p class="card-text mb-auto">{{config["most_recent"][1]["summary"]}}</p>
+          <a href="{{config['PROTOCOL']}}{{config['most_recent'][1]['route']}}" class="stretched-link">Continue reading</a>
+        </div>
+        <div class="col-auto d-none d-lg-block">
+          <svg class="bd-placeholder-img" width="200" height="250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: Thumbnail" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#55595c"/><text x="50%" y="50%" fill="#eceeef" dy=".3em">Thumbnail</text></svg>
+        </div>
+      </div>
+    </div>
+{%- endif %}
+
+  </div>
+
+  <div class="row g-5">
+    <div class="col-md-8" style="font-size: 1.25rem;">
+      {{ body }}
+    </div>
+
+    <div class="col-md-4">
+      <div class="position-sticky" style="top: 2rem;">
+
+        {% macro panel_show_item_recur(item, class, lvl, max_lvl=2) -%}
+        <a class="list-group-item" href="#{{ item['id'] }}">{{ item["name"] }}</a>
+        
+        {% if item["children"]|length > 0 and lvl <= max_lvl %}
+        <div class="list-group">
+          {%- for child_item in item["children"] %}
+            {{ panel_show_item_recur(child_item, class, lvl + 1, max_lvl) }}
+          {% endfor %}
+        </div>
+        {% endif %}
+        
+        {%- endmacro %}
+        
+          {%- for item in meta["panel"] %}
+            
+            {%- if item.type and item.type == "text" %}
+            <div>
+            {{ item.content | safe }}
+            </div>
+            {%- elif item.type == "toc" %}
+          <div class="list-group" style="margin-left: -25px; padding-left: 0;">
+              {%- for item_lvl1 in meta["toc"] %}
+              {{ panel_show_item_recur(item_lvl1, "toc_item", 2, item.max_lvl|default(2)) }}
+              {% endfor %}
+          </div>
+            {% endif %}
+
+          {%- endfor %}
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="blog-footer">
+  <p>Blog template built for <a href="https://getbootstrap.com/">Bootstrap</a> by <a href="https://twitter.com/mdo">@mdo</a>.</p>
+  <p>
+    <a href="#">Back to top</a>
+  </p>
+</footer>
+
+
+    
+  </body>
+</html>

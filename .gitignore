@@ -1,3 +1,6 @@
+azmp/
+blog_public/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

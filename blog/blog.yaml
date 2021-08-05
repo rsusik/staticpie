@@ -1,0 +1,22 @@
+# where markdown files and templates are stored
+ROOT_FOLDER: blog
+# where website is generated, preferable /tmp and absolute path
+PUBLIC_FOLDER: blog_public
+# the URL used for deploy
+BASE_URL: superblog.com
+# the protocol http:// or https://
+PROTOCOL: http://
+
+# Folders that should be copied to public folder
+includes:
+    - assets
+    - blog.css
+    - blog.rtl.css
+
+# Extensions
+extensions:
+    - menu.py
+    - tags.py
+    - plist.py
+    - search.py
+    - most_recent.py
