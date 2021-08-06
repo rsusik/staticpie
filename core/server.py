@@ -310,7 +310,7 @@ class FSEventHandler(FileSystemEventHandler):
             filename, file_extension = os.path.splitext(event.src_path)
             file_extension = file_extension.lower()
             if file_extension in ['.md']:
-                if 'yaml_modified': # TODO
+                if 'yaml_modified':
                     self._generate_all()
                     self.client_reload()
                 else: # only markdown

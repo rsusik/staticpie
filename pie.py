@@ -113,7 +113,7 @@ def main():
 
     # GLOBAL ARGUMENTS
     parser.add_argument("action", type=str, help="action", choices=["deploy", "serve"])
-    parser.add_argument("-c", "--config", dest='c', type=str, help="config file", default='azmp/azmp.yaml')
+    parser.add_argument("-c", "--config", required=True, dest='c', type=str, help="config file")
 
     #subparsers = parser.add_subparsers(help='action', dest='action')
 
