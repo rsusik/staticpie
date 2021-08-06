@@ -190,7 +190,9 @@ class Generator:
                 else:
                     shutil.copy(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}')
 
+            # ==================== STAGE 1========================
             # Read all files and store in list
+            # ====================================================
             md_files = self.get_md_files()
             self.all_files = []
             for md_file in tqdm(md_files):
@@ -210,13 +212,13 @@ class Generator:
                 })
 
             # Execute on_generation_start (global extensions)
-            # TODO: Uruchamiać przy edycji, zmianie rozszerzeń.
             for extension in self.get_extensions({'extensions':self.extensions}):
                 on_generation_start = getattr(extension, 'on_generation_start', None)  
                 if on_generation_start is not None:
                     extension.on_generation_start(self, self.config, self.all_files)
 
-            
+            console.log('[blue]Stage 1.  [/blue] Read *.md files: [green]COMPLETE[/green]')
+
             # Preparing config constants
             # TODO: Poniższe to tylko podmianka np. ~~BASE_URL~~ 
             # na URL podany w configu glownym
@@ -232,6 +234,8 @@ class Generator:
                 preprocessing = getattr(extension, 'preprocessing', None)  
                 if preprocessing is not None:
                     extension.preprocessing(self, self.config, self.all_files)
+
+            console.log('[blue]Stage 2.  [/blue] Preprocessing: [green]COMPLETE[/green]')
 
             for file in tqdm(self.all_files):
                 file['meta'] = file['meta']
@@ -273,11 +277,15 @@ class Generator:
                 })
                 file['content'] = html
 
+            console.log('[blue]Stage 3.  [/blue] HTML generation: [green]COMPLETE[/green]')
+
             for extension in self.get_extensions({'extensions':self.extensions}):
                 postprocessing = getattr(extension, 'postprocessing', None)  
                 if postprocessing is not None:
                     pass
                     extension.postprocessing(self, self.config, self.all_files)
+
+            console.log('[blue]Stage 3.1.[/blue] Postprocessing: [green]COMPLETE[/green]')
 
             for file in tqdm(self.all_files):
                 # get destination folder
@@ -308,4 +316,7 @@ class Generator:
             
             with open(f'{self.config["PUBLIC_FOLDER"]}/pages.pickle', 'wb') as f:
                 pickle.dump(self.all_files, f, pickle.HIGHEST_PROTOCOL)
+
+            console.log('[blue]Stage 4.  [/blue] Finishing tasks: [green]COMPLETE[/green]')
+
         return True
