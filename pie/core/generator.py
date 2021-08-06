@@ -7,6 +7,7 @@ from jinja2 import Template, Environment, FileSystemLoader
 # from marko.ext.gfm import gfm as marko
 import markdown
 import re
+from markdown.extensions import Extension
 import yaml
 import os, shutil
 import importlib
@@ -111,7 +112,10 @@ class Generator:
         except WrongMarkdownFileException as ex:
             raise WrongMarkdownFileException(md_filename)
 
-    def _get_extensions(self, conf, path):
+    def _get_extensions(self, 
+        conf : ConfigType, 
+        path : str
+    ) -> List[Extension]:
         extensions = []
         if 'extensions' in conf:
             for ext_filename in conf['extensions']:
@@ -192,6 +196,9 @@ class Generator:
         return html, toc
 
     def get_extensions(self, conf):
+        # TODO: f'./extensions' to be replaced with proper package folder
+        # TODO: extensions from inside the root website folder could be also loaded
+        # TODO: extensions installed as separate packages could also be loaded
         return self._get_extensions(conf, f'./extensions')
     
     def generate(self):
