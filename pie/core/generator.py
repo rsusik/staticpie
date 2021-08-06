@@ -21,7 +21,7 @@ from rich.console import Console
 console = Console()
 
 from pathlib import Path
-from core.server import log
+from pie.core.server import log
 
 
 class ConfigType(TypedDict):

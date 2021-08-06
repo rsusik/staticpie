@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+
+__version__ = '0.0.1'
+
 import os, sys
 if sys.version_info.major !=3 or sys.version_info.minor < 8:
     print('\033[41m')
@@ -18,9 +21,9 @@ from rich import box, print as rprint
 from rich.panel import Panel
 from rich.pretty import pprint
 
-from core.generator import ConfigType, Generator
-from core.server import log, is_port_open
-from core import server
+from pie.core.generator import ConfigType, Generator
+from pie.core.server import log, is_port_open
+from pie.core import server
 
 class ServeArgs(TypedDict, total=False):
     status: bool
