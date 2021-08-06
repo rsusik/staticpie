@@ -112,13 +112,27 @@ class Generator:
         extensions = []
         if 'extensions' in conf:
             for ext_filename in conf['extensions']:
-                spec = importlib.util.spec_from_file_location("", f'{path}/{ext_filename}')
+                extension_filename = f'{path}/{ext_filename}'
+                from pathlib import Path
+                from core.server import log
+                if Path(f'{extension_filename}.py').is_file():
+                    extension_filename = f'{extension_filename}.py'
+                    pass
+                elif Path(extension_filename).is_dir() and Path(extension_filename) / f'{Path(extension_filename).stem}.py':
+                    extension_filename = Path(extension_filename) / f'{Path(extension_filename).stem}.py'
+                else:
+                    log.warning(f'Unrecognized extension: {ext_filename}')
+                    continue
+                log.debug(f'Processing: {ext_filename}')
+                spec = importlib.util.spec_from_file_location('', extension_filename)
                 ext = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(ext)
-                extension_class_name = [xx for xx in ext.__dict__ if "Extension" in xx][-1]
+                extension_class_name = [xx for xx in ext.__dict__ if 'Extension' in xx][-1]
                 extension_class = getattr(ext, extension_class_name)
                 ext_instance = extension_class()
                 extensions.append(ext_instance)
+                    
+
         return extensions
 
     # def md2html(self, md):

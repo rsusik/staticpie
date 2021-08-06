@@ -15,8 +15,8 @@ includes:
 
 # Extensions
 extensions:
-    - menu.py
-    - tags.py
-    - plist.py
-    - search.py
-    - most_recent.py
+    - menu
+    - tags
+    - plist
+    - search
+    - most_recent
