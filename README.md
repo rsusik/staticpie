@@ -14,9 +14,9 @@
 - [x] Most recent
 - [x] Markdown parsing
 - [x] Extensions
-- [] Convert blog to template.
-- [] Add command that generates the example website. Maybe something like `pie create website`.
-- [] The same for adding markdown file. Maybe something like: `pie create page`.
+- [ ] Convert blog to template.
+- [ ] Add command that generates the example website. Maybe something like `pie create website`.
+- [ ] The same for adding markdown file. Maybe something like: `pie create page`.
 
 ## Execution
 
