@@ -1,5 +1,13 @@
 #!/usr/bin/env python
-import os
+import os, sys
+if sys.version_info.major !=3 or sys.version_info.minor < 8:
+    print('\033[41m')
+    print('=========================> ERROR <=============================')
+    print('>       The minimum supported Python version is 3.8.          <')
+    print('>          Please install it and then try again.              <')
+    print('===============================================================\033[0m')
+    exit(1)
+
 import threading
 import argparse
 from typing import Dict, TypedDict
@@ -31,14 +39,6 @@ def serve(
     websockets_port : str,
     config : ConfigType
 ) -> ServeArgs:
-# TypedDict('ServeOutput', {
-#     'http_host' : str,
-#     'http_port' : str,
-#     'http_folder' : str,
-#     'websockets_host' : str,
-#     'websockets_port' : str,
-#     'config' : ConfigType
-# }):
     for _ in range(3):
         if is_port_open(http_host, http_port):
             log.info(f'Using port {http_port} for http server.')
@@ -107,7 +107,7 @@ def load_config_file(config_path : str) -> ConfigType:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Runs the framework in edit mode.',
+        description='Piece of cake. Static site generator.',
         #epilog="Example:\npython generate.py --config dev.yaml"
     )
 
@@ -151,7 +151,7 @@ def main():
             config,
             args.dir
         ) == True:
-            rprint(Panel(f"[bold green]Success: the webside is generated in {config['PUBLIC_FOLDER']} folder.\nYou can upload the content to HTTP server.", title="Summary"))
+            rprint(Panel(f"[bold green]Success: the website is generated in {config['PUBLIC_FOLDER']} folder.\nYou can upload the content to HTTP server.", title="Summary"))
       
     
 if __name__ == "__main__":

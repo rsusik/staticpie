@@ -1,6 +1,6 @@
 # PIEce of cake
 
-*Super simple static webside generator.*
+*Super simple static website generator.*
 
 ## Features:
 
@@ -28,7 +28,7 @@ After successfull execution of serve you should see screen similar to bylow:
 <img src="serve_output.png" />
 
 ## Configuration
-The webside configuration should be written in YAML language and contain following elements:
+The website configuration should be written in YAML language and contain following elements:
 * `ROOT_FOLDER`
 * `PUBLIC_FOLDER`
 * `BASE_URL`

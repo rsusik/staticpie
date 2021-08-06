@@ -58,7 +58,7 @@ class Extension:
     ):
         '''
         Performs activities before markdown parser is executed.
-        It can generate some additional templates/websides/markdowns.
+        It can generate some additional templates/websites/markdowns.
 
         Paramters:
         * generator - the generator that executes this function,

@@ -1,25 +1,26 @@
 from glob import glob
-from tqdm import tqdm
+#from tqdm import tqdm
 from pathlib import Path
 from jinja2 import Template, Environment, FileSystemLoader
-#from markdown import markdown
-#import marko
-from marko.ext.gfm import gfm as marko
+# from markdown import markdown
+# import marko
+# from marko.ext.gfm import gfm as marko
 import markdown
 import re
 import yaml
 import os, shutil
 import importlib
-import pickle, json
+import pickle
 import datetime
 from time import sleep
+from typing import Dict, List, TypedDict # Python 3.8
 
 #from rich.progress import track as tqdm
 tqdm = lambda x: x
 from rich.console import Console
 console = Console()
 
-from typing import Dict, List, TypedDict
+
 class ConfigType(TypedDict):
     ROOT_FOLDER: str
     PUBLIC_FOLDER: str
@@ -66,7 +67,6 @@ class WrongMarkdownFileException(Exception):
 
 
 class Generator:
-
     def __init__(self, config : ConfigType):
 
         self.config = config
@@ -138,23 +138,21 @@ class Generator:
                 'markdown.extensions.tables',
                 'markdown.extensions.abbr',
                 'markdown.extensions.md_in_html'
-                #'pymdownx.tabbed' # umozliwia tworzenie kart - nie działa lub działa kiepsko z bootstrap
+                # The below extensions come from: https://facelessuser.github.io/pymdown-extensions/extensions/arithmatex/
+                #'pymdownx.tabbed' # doesn't work properly with bootstrap
                 ,'pymdownx.arithmatex' # mathJax
                 ,'pymdownx.caret' # superscript -> text^a\ superscript^
-                ,'pymdownx.details' # pozwala wygenerowac rozwijane szczegoly, przyklad:
-                # ??? optional-class "Summary"
-                # Here's some content.
-                #,'pymdownx.emoji' # trzeba sprawdzić licencje providerow tych ikonek
-                #,'pymdownx.escapeall' # pozwala stawiac \ przed wszystkimi znakami: \W\e\ \c\a\n\ \e\s\c\a\p\e
-                #,'pymdownx.extra' # ficzery ktore byly w Markdown, ale teraz są przepisane ponownie ze wzgledu na kompatybilnosc a raczej jej brak
-                ,'pymdownx.highlight' # kolorowanie: `#!php-inline $a = array("foo" => 0, "bar" => 1);`
-                ,'pymdownx.keys' # możliwosć dodawania skrótów klawiszowych: ++ctrl+alt+delete++
-                ,'pymdownx.magiclink' # automatycznie wykrywa i wstawia <a href=".."> w miejsce gdzie sa linki
-                ,'pymdownx.mark' # podkresla tekst jakby markerem
-                ,'pymdownx.progressbar'  # progressBar [=25% "25%"]
-                #,'pymdownx.superfences'
-                ,'pymdownx.tasklist' # umozliwia tworzenie listy zadan
-                ,'pymdownx.tilde' # umozliwia pisanie indeksu dolnego badz przekreslonego tekstu
+                ,'pymdownx.details'
+                #,'pymdownx.emoji'
+                #,'pymdownx.escapeall' # lets escape all characters like: \W\e\ \c\a\n\ \e\s\c\a\p\e
+                ,'pymdownx.highlight' # syntax highlighting, adds class "language-{language}"
+                ,'pymdownx.keys' # easily type keyboard shortcuts: ++ctrl+alt+delete++
+                ,'pymdownx.magiclink' # automatically puts links: <a href="..">
+                ,'pymdownx.mark' # marks a text
+                #,'pymdownx.progressbar' # doesn't work properly with bootstrap [=25% "25%"]
+                ,'pymdownx.superfences' # I didn't check it
+                ,'pymdownx.tasklist' # task list such as - [x]
+                ,'pymdownx.tilde' # allow writting: ~~Delete me~~ or text~a\ subscript~
             ],
             extension_configs={
                 "pymdownx.arithmatex": {
