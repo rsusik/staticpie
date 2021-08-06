@@ -310,4 +310,4 @@ class Generator:
             
             with open(f'{self.config["PUBLIC_FOLDER"]}/pages.pickle', 'wb') as f:
                 pickle.dump(self.all_files, f, pickle.HIGHEST_PROTOCOL)
-
+        return True
