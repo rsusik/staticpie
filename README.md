@@ -1,6 +1,7 @@
-# PIEce of cake
+<p align="center">
+    <img src="staticpie.png" alt="PyCerializer" />
+</p>
 
-*Super simple static website generator.*
 
 ## Features:
 

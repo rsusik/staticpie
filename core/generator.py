@@ -20,6 +20,9 @@ tqdm = lambda x: x
 from rich.console import Console
 console = Console()
 
+from pathlib import Path
+from core.server import log
+
 
 class ConfigType(TypedDict):
     ROOT_FOLDER: str
@@ -29,7 +32,7 @@ class ConfigType(TypedDict):
     includes: List[str]
     extensions: List[str]
 
-class FileMetaType(TypedDict):
+class FileMetaType(TypedDict, total=False):
     route: str
     title: str
     template: str
@@ -42,7 +45,7 @@ class FileType(TypedDict):
     content: str
 
 class FileStartType(FileType):
-    meta: str
+    meta: FileMetaType
 
 class FilePreType(FileType):
     meta: FileMetaType
@@ -113,8 +116,6 @@ class Generator:
         if 'extensions' in conf:
             for ext_filename in conf['extensions']:
                 extension_filename = f'{path}/{ext_filename}'
-                from pathlib import Path
-                from core.server import log
                 if Path(f'{extension_filename}.py').is_file():
                     extension_filename = f'{extension_filename}.py'
                     pass
@@ -204,9 +205,9 @@ class Generator:
                 else:
                     shutil.copy(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}')
 
-            # ==================== STAGE 1========================
-            # Read all files and store in list
-            # ====================================================
+            # ==================== STAGE 1 ========================
+            # Read all files and store in list (meta is dictionary)
+            # =====================================================
             md_files = self.get_md_files()
             self.all_files = []
             for md_file in tqdm(md_files):
@@ -233,6 +234,10 @@ class Generator:
 
             console.log('[blue]Stage 1.  [/blue] Read *.md files: [green]COMPLETE[/green]')
 
+            # ==================== STAGE 2 ========================
+            # Inject constants into the meta and content
+            # =====================================================
+
             # Preparing config constants
             # TODO: Poniższe to tylko podmianka np. ~~BASE_URL~~ 
             # na URL podany w configu glownym
@@ -251,6 +256,9 @@ class Generator:
 
             console.log('[blue]Stage 2.  [/blue] Preprocessing: [green]COMPLETE[/green]')
 
+            # ==================== STAGE 3 ============================
+            # Combine template and markdown., generate HTML, create TOC
+            # =========================================================
             for file in tqdm(self.all_files):
                 file['meta'] = file['meta']
                 # TODO: Generowanie HTMLa / parsowanie markdowna
@@ -300,6 +308,10 @@ class Generator:
                     extension.postprocessing(self, self.config, self.all_files)
 
             console.log('[blue]Stage 3.1.[/blue] Postprocessing: [green]COMPLETE[/green]')
+
+            # ==================== STAGE 4 =================
+            # Save HTML files in destination directory
+            # ==============================================
 
             for file in tqdm(self.all_files):
                 # get destination folder
