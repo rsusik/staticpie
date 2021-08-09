@@ -12,15 +12,16 @@ from pie.core.generator import (
     FilePostType,
     FileEndType
 )
+from pie.core.utils import *
 
 
 template_meta = '''
 route: !###!ROUTE!###!
-template: tpl_only_body.html
+template: !###!PAGELIST_DEFAULT_TEMPLATE!###!
 extensions: [pagelist]
 pagelist_tags: !###!TAGS!###!
 title: !###!TITLE!###!
-author: Robert
+author: Generated
 '''
 
 template_content = '''
@@ -54,15 +55,22 @@ class PagelistExtension(Extension):
         if 'tags' not in generator.config:
             raise Exception("ERROR: Extension tags should be added before pagelist extension")
 
-        default_template_path = generator.config['ROOT_FOLDER'] + '/' + 'tpl_only_body.html'
-        if not os.path.isfile(default_template_path):
-            with open(default_template_path, 'wt') as f:
-                f.write(template_content)
+        if 'pagelist' not in generator.config:
+            generator.config['pagelist'] = {}
+
+        if 'template' not in generator.config['pagelist']:
+            log.debug(generator.config['ROOT_FOLDER'])
+            template_path = generator.config['ROOT_FOLDER'] + '/' + 'pagelist_default_template.html'
+            if not os.path.isfile(template_path):
+                with open(template_path, 'wt') as f:
+                    f.write(template_content)
+            generator.config['pagelist']['template'] = 'pagelist_default_template.html'
 
         for tag in generator.config['tags']['tags']:
             tmp = template_meta.replace('!###!TAGS!###!', str([tag["tag"]]))
             tmp = tmp.replace('!###!TITLE!###!', tag['label'])
             tmp = tmp.replace('!###!ROUTE!###!', f'~~BASE_URL~~/{tag["tag"]}')
+            tmp = tmp.replace('!###!PAGELIST_DEFAULT_TEMPLATE!###!', f"{generator.config['pagelist']['template']}")
             tmp = yaml.load(tmp, Loader=yaml.Loader)
 
             files.append({
