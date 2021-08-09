@@ -1,15 +1,16 @@
-'''
-Performs preprocessing and postprocessing of website.
-'''
+from typing import List
 
-from collections import defaultdict
-from re import split
-import lxml.html
-import json
+from pie.core.generator import (
+    Generator, 
+    ConfigType,
+    FileStartType,
+    FilePreType,
+    FilePostType,
+    FileEndType
+)
+from pie.core.extension import Extension
 
-class Extension:
-    def __init__(self):
-        pass
+class MostrecentExtension(Extension):
 
     def cut(self, str, max_length):
         if len(str) > max_length:
@@ -17,7 +18,10 @@ class Extension:
         else:
             return str
 
-    def preprocessing(self, generator, config, files):
+    def preprocessing(self, 
+        generator : Generator, 
+        files : List[FilePreType]
+    ) -> None:
         
         pages_with_date = filter(lambda x: 'date' in x['meta'], files)
         pages_with_date_sorted = sorted(pages_with_date, key=lambda x: x['meta']['date'])
@@ -29,5 +33,5 @@ class Extension:
             'route': file['meta']['route'],
         }, pages_with_date_sorted)
 
-        config['most_recent'] = list(pages_with_date_sorted_map)
+        generator.config['mostrecent'] = list(pages_with_date_sorted_map)
 

@@ -1,4 +1,4 @@
-tags_config = {
+tags_map = {
     'stats': {
         'label': 'Statistics',
         'order': 100
@@ -13,4 +13,4 @@ tags_config = {
     }
 }
 
-tags_ignored = set(['some', 'tags', 'to', 'ignore'])
+tags_ignored = list(set(['some', 'tags', 'to', 'ignore']))

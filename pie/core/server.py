@@ -1,14 +1,12 @@
-
 import os, sys
-
+from pathlib import Path
+import shutil
 from io import BytesIO
 from functools import partial
-import importlib
-
+from typing import List
 import urllib
 import email.utils
 import datetime
-
 import asyncio
 import socketserver
 import websockets
@@ -20,24 +18,8 @@ import psutil
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 
-from rich.traceback import install
-install(show_locals=True)
-
-import logging
-from rich.logging import RichHandler
-
-from . import generator
-
-
-logging.basicConfig(
-    #level="NOTSET",
-    level="INFO",
-    format="%(message)s",
-    datefmt="[%X]",
-    handlers=[RichHandler(rich_tracebacks=True)]
-)
-
-log = logging.getLogger("rich")
+from pie.core.generator import Generator
+from pie.core.utils import *
 
 
 def is_port_open(http_host, http_port):
@@ -193,16 +175,6 @@ def serve_http(http_host="localhost", http_port=8080, http_folder='./', websocke
         httpd.serve_forever()
 
 
-def generate(config):
-    try:
-        importlib.reload(generator)
-        from core.generator import Generator
-        generator = Generator(config)
-        generator.generate()
-    except Exception as ex:
-        log.error(f'ERROR: {ex}')
-
-
 async def remove_disconnected(clients):
     to_remove = list(filter(lambda client: client.closed  == True, clients))
     try:
@@ -230,11 +202,13 @@ def ws_handler(queue, clients):
 
 
 class FileObserver(object):
-    def __init__(self, event_handler, directory='./'):
+    def __init__(self, event_handler, directory : str):
+        self.directory = directory
         self.observer = PollingObserver()
         self.observer.schedule(event_handler(observer=self.observer), directory, recursive=True)
 
     def __enter__(self):
+        log.debug(f'Strting observing {self.directory}')
         self.observer.start()
         return self
 
@@ -247,16 +221,21 @@ class FileObserver(object):
 class FSEventHandler(FileSystemEventHandler):
     """Logs all the events captured."""
 
-    def __init__(self, observer, queue, clients, config):
+    def __init__(self, 
+        observer, 
+        queue : List, 
+        clients : List, 
+        generator : Generator
+    ):
         super().__init__()
-        self.config  = config
+        self.generator  = generator
         self.queue   = queue
         self.clients = clients
         self.observer = observer
 
     def _generate_all(self):
         log.info('Generating all pages from scratch...')
-        generate(self.config)
+        self.generator.generate()
         # Anything that has been triggered dugin generation is removed from queue
         self.observer.event_queue.queue.clear()
         #self.observer.event_queue.task_done()
@@ -298,13 +277,22 @@ class FSEventHandler(FileSystemEventHandler):
         self._generate_all()
         #self.queue.append(f'{what}, {event.src_path}')
 
+    @staticmethod
+    def get_dest_path(
+        root_folder : str,
+        public_folder : str,
+        file_path : str
+    ) -> str:
+        common = os.path.commonpath([os.path.abspath(root_folder), os.path.abspath(file_path)])
+        local_path = os.path.abspath(file_path).replace(common, '')
+        dest_path = os.path.normpath(public_folder + '/' + local_path)
+        return dest_path
+
     def on_modified(self, event):
         super().on_modified(event)
         what = 'directory' if event.is_directory else 'file'
         log.info(f'Modified, {what}, {event.src_path}')
-        log.debug(f'self.config["PUBLIC_FOLDER"]: {self.config["PUBLIC_FOLDER"]}')
-        log.debug(f'event.src_path              : {event.src_path}')
-        if self.config["PUBLIC_FOLDER"] in event.src_path:
+        if self.generator.config["PUBLIC_FOLDER"] in event.src_path:
             return
         if what == 'file':
             filename, file_extension = os.path.splitext(event.src_path)
@@ -313,30 +301,39 @@ class FSEventHandler(FileSystemEventHandler):
                 if 'yaml_modified':
                     self._generate_all()
                     self.client_reload()
-                else: # only markdown
+                else: # only markdown (TODO)
                     self._regenerate_one()
                     self.client_reload()
             elif file_extension in ['.css']:
-                # copy file to public folder
-                # TODO
-                # and then refresh css for clients
+                dest_path = self.get_dest_path(
+                    self.generator.config['ROOT_FOLDER'],
+                    self.generator.config['PUBLIC_FOLDER'],
+                    event.src_path
+                )
+                log.debug(f'Copying file {os.path.abspath(event.src_path)} to {dest_path}')
+                shutil.copy(event.src_path, dest_path)
                 self.client_refreshcss()
             elif file_extension in ['.jpg', '.jpeg', '.png', '.gif', '.svg']:
-                # only reload clients
+                dest_path = self.get_dest_path(
+                    self.generator.config['ROOT_FOLDER'],
+                    self.generator.config['PUBLIC_FOLDER'],
+                    event.src_path
+                )
+                log.debug(f'Copying file {os.path.abspath(event.src_path)} to {dest_path}')
+                shutil.copy(event.src_path, dest_path)
                 self.client_reload()
             else:
                 self._generate_all()
                 self.client_reload()
-        #self.queue.append(f'{what}, {event.src_path}')
         self.observer.event_queue.queue.clear()
 
 
-def serve_websockets(config, host='127.0.0.1', port=8011):
+def serve_websockets(generator, host='127.0.0.1', port=8011):
     msg_queue = []
     clients = []
-    FSEventHandlerClass = partial(FSEventHandler, queue=msg_queue, clients=clients, config=config)
+    FSEventHandlerClass = partial(FSEventHandler, queue=msg_queue, clients=clients, generator=generator)
 
-    with FileObserver(FSEventHandlerClass, config['ROOT_FOLDER']):
+    with FileObserver(FSEventHandlerClass, generator.config['ROOT_FOLDER']):
         new_loop = asyncio.new_event_loop()
         start_server = websockets.serve(ws_handler(msg_queue, clients), host, port, loop=new_loop)
         log.info(f'Starting file observer and websocket server at {host}:{port}')

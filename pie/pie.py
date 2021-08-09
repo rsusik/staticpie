@@ -3,6 +3,8 @@
 __version__ = '0.0.1'
 
 import os, sys
+
+
 if sys.version_info.major !=3 or sys.version_info.minor < 8:
     print('\033[41m')
     print('=========================> ERROR <=============================')
@@ -16,14 +18,13 @@ import argparse
 from typing import Dict, TypedDict
 import webbrowser
 
-import yaml
 from rich import box, print as rprint
 from rich.panel import Panel
-from rich.pretty import pprint
 
 from pie.core.generator import ConfigType, Generator
 from pie.core.server import log, is_port_open
 from pie.core import server
+
 
 class ServeArgs(TypedDict, total=False):
     status: bool
@@ -34,13 +35,14 @@ class ServeArgs(TypedDict, total=False):
     websockets_port : str
     config : ConfigType
 
+
 def serve(
     http_host : str, 
     http_port : str,
-    http_folder : str,
+    #http_folder : str,
     websockets_host : str,
     websockets_port : str,
-    config : ConfigType
+    generator : Generator
 ) -> ServeArgs:
     for _ in range(3):
         if is_port_open(http_host, http_port):
@@ -63,15 +65,14 @@ def serve(
         log.error('All the checked ports for websocket are already in use.')
         return {'status': False}
 
-    config['BASE_URL'] = f'{http_host}:{http_port}'
+    generator.generate(
+        BASE_URL = f'{http_host}:{http_port}'
+    )
 
-    generator = Generator(config)
-    generator.generate()
-
-    th2 = threading.Thread(target=server.serve_http, args=[http_host, http_port, http_folder, websockets_host, websockets_port]) # serve_http(http_host, http_port, http_folder, websockets_host, websockets_port)
+    th2 = threading.Thread(target=server.serve_http, args=[http_host, http_port, generator.config['PUBLIC_FOLDER'], websockets_host, websockets_port]) # serve_http(http_host, http_port, http_folder, websockets_host, websockets_port)
     th2.start()
 
-    th = threading.Thread(target=server.serve_websockets, args=[config, websockets_host, websockets_port]) # serve_websockets(config)
+    th = threading.Thread(target=server.serve_websockets, args=[generator, websockets_host, websockets_port]) # serve_websockets(config)
     th.start()
 
     webbrowser.open(f'http://{http_host}:{http_port}')
@@ -80,32 +81,21 @@ def serve(
         'status': True,
         'http_host': http_host,
         'http_port': http_port,
-        'http_folder': http_folder,
+        #'http_folder': http_folder,
         'websockets_host': websockets_host,
         'websockets_port': websockets_port,
-        'config': config,
+        'generator': generator,
     }
 
 
 def deploy(
-    config : ConfigType,
+    generator : Generator,
     path : str = None
 ):
+    args = {}
     if path is not None:
-        config['PUBLIC_FOLDER'] = path
-    generator = Generator(config)
-    return generator.generate()
-
-
-def load_config_file(config_path : str) -> ConfigType:
-    # LOAD CONFIG FILE
-    if os.path.isfile(config_path) != True:
-        log.error(f"Config file does not exists {config_path}")
-        exit(101)
-    with open(config_path, 'rt') as f:
-        config_str = f.read()
-
-    return yaml.load(config_str, Loader=yaml.Loader)
+        args['PUBLIC_FOLDER'] = path
+    return generator.generate(**args)
 
 
 def main():
@@ -133,17 +123,15 @@ def main():
     
     args = parser.parse_args()
     config_path  = args.c
-
-    config = load_config_file(config_path)
+    generator = Generator(config_path)
 
     if args.action == 'serve':
         serve_out = serve(
             args.address,
             int(args.port),
-            config["PUBLIC_FOLDER"],
             'localhost',
             8011,
-            config
+            generator
         )
         if serve_out['status'] == True:
             rprint(Panel(f"[bold green]Serving at: http://{serve_out['http_host']}:{serve_out['http_port']}", title="Summary"))
@@ -151,10 +139,10 @@ def main():
             rprint(Panel(f"[bold red]Error occured, exiting.", title="Summary"))
     elif args.action == 'deploy':
         if deploy(
-            config,
+            generator,
             args.dir
         ) == True:
-            rprint(Panel(f"[bold green]Success: the website is generated in {config['PUBLIC_FOLDER']} folder.\nYou can upload the content to HTTP server.", title="Summary"))
+            rprint(Panel(f"[bold green]Success: the website is generated in {generator.config['PUBLIC_FOLDER']} folder.\nYou can upload the content to HTTP server.", title="Summary"))
       
     
 if __name__ == "__main__":

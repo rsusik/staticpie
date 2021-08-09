@@ -18,10 +18,9 @@ class Extension:
     #     pass
 
     def preprocessing(self, 
-        generator : Generator, 
-        config : ConfigType, 
+        generator : Generator,
         files : List[FilePreType]
-    ):
+    ) -> None:
         '''
         Performs preprocessing of website
         i.e. may deliver additional data to template.
@@ -35,10 +34,9 @@ class Extension:
         pass
 
     def postprocessing(self, 
-        generator : Generator, 
-        config : ConfigType, 
+        generator : Generator,
         files : List[FilePostType]
-    ):
+    ) -> None:
         '''
         Performs postprocessing of website
         i.e. may remove bad words from output website.
@@ -52,10 +50,9 @@ class Extension:
         pass
 
     def on_generation_start(self, 
-        generator : Generator, 
-        config : ConfigType, 
+        generator : Generator,
         files : List[FileStartType]
-    ):
+    ) -> None:
         '''
         Performs activities before markdown parser is executed.
         It can generate some additional templates/websites/markdowns.
@@ -68,10 +65,9 @@ class Extension:
         pass
 
     def on_generation_end(self, 
-        generator : Generator, 
-        config : ConfigType, 
+        generator : Generator,
         files : List[FileEndType]
-    ):
+    ) -> None:
         '''
         Performs activities after all html's are generated.
         It can read some stats, peform some additional activities

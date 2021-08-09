@@ -1,11 +1,6 @@
-import numpy as np
-from glob import glob
-import yaml
-from core.extension import Extension
 from typing import List
 
-
-from core.generator import (
+from pie.core.generator import (
     Generator, 
     ConfigType,
     FileStartType,
@@ -13,9 +8,31 @@ from core.generator import (
     FilePostType,
     FileEndType
 )
+from pie.core.extension import Extension
 
 
 class MenuExtension(Extension):
+    def preprocessing(self, 
+        generator : Generator,
+        files : List[FilePreType]
+    ):
+        menu_items = []
+        
+        for file in files:
+            if 'menu' in file['meta']:
+                menu_item = file['meta']['menu'].copy()
+                self._default_if_null(menu_item, 'order', 999)
+                menu_item['route'] = file['meta']['route']
+                menu_items.append(menu_item)
+
+        generator.config["menu"] = sorted(
+            [self._get_children(item, menu_items) for item in menu_items if 'parent' not in item or item["parent"] is None],
+            key=lambda el: el['order']
+        )
+
+        return 0
+
+
     def _get_children(self, el, menu_items):
         if 'id' not in el or el["id"] is None:
             return el
@@ -33,27 +50,4 @@ class MenuExtension(Extension):
     def _default_if_null(self, el, key, default):
         if key not in el:
             el[key] = default
-
-    
-    def preprocessing(self, 
-        generator : Generator, 
-        config : ConfigType, 
-        files : List[FilePreType]
-    ):
-        menu_items = []
-        
-        for file in files:
-            if 'menu' in file['meta']:
-                menu_item = file['meta']['menu'].copy()
-                self._default_if_null(menu_item, 'order', 999)
-                menu_item['route'] = file['meta']['route']
-                menu_items.append(menu_item)
-
-        config["menu"] = sorted(
-            [self._get_children(item, menu_items) for item in menu_items if 'parent' not in item or item["parent"] is None],
-            key=lambda el: el['order']
-        )
-
-        return 0
-
 

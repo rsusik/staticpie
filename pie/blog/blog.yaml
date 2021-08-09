@@ -1,5 +1,5 @@
 # where markdown files and templates are stored
-ROOT_FOLDER: /home/ok/strony/staticpie/pie/blog # This is going to be removed from config and I will assume that the config is itself inside the root folder
+#ROOT_FOLDER: /home/ok/strony/staticpie/pie/blog # This is going to be removed from config and I will assume that the config is itself inside the root folder
 # where website is generated, preferable /tmp and absolute path
 PUBLIC_FOLDER: /home/ok/strony/staticpie/pie/blog_public
 # the URL used for deploy
@@ -17,6 +17,7 @@ includes:
 extensions:
     - menu
     - tags
-    - plist
+    - pagelist
     - search
-    - most_recent
+    - mostrecent
+    

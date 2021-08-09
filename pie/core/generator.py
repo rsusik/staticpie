@@ -1,10 +1,6 @@
 from glob import glob
-#from tqdm import tqdm
 from pathlib import Path
 from jinja2 import Template, Environment, FileSystemLoader
-# from markdown import markdown
-# import marko
-# from marko.ext.gfm import gfm as marko
 import markdown
 import re
 from markdown.extensions import Extension
@@ -16,13 +12,10 @@ import datetime
 from time import sleep
 from typing import Dict, List, TypedDict # Python 3.8
 
-#from rich.progress import track as tqdm
-tqdm = lambda x: x
-from rich.console import Console
-console = Console()
+from pie.core.utils import *
 
 from pathlib import Path
-from pie.core.server import log
+from pie.core.utils import log
 
 
 class ConfigType(TypedDict):
@@ -32,6 +25,7 @@ class ConfigType(TypedDict):
     PROTOCOL: str
     includes: List[str]
     extensions: List[str]
+
 
 class FileMetaType(TypedDict, total=False):
     route: str
@@ -59,6 +53,7 @@ class FileEndType(FileType):
     dest_filename: str
     dest_folder: str
 
+
 class WrongMarkdownFileException(Exception):
     def __init__(self, filename=None, markdown=None):
         self.filename = filename
@@ -71,29 +66,45 @@ class WrongMarkdownFileException(Exception):
 
 
 class Generator:
-    def __init__(self, config : ConfigType):
-
-        self.config = config
+    def __init__(self, config_path : str) -> None: # config : ConfigType
+        self.config_path = config_path
+        self.config : ConfigType = self.load_config_file(config_path)
         self.config['GENERATION_TIME'] = datetime.date.today().strftime('%Y-%m-%d')
 
-        self.includes = []
-        if 'includes' in config:
-            self.includes = config['includes']
 
-        self.extensions = []
-        if 'extensions' in config:
-            self.extensions = config['extensions']
-            
+    @staticmethod
+    def load_config_file(config_path : str) -> ConfigType:
+        if os.path.isfile(config_path) != True:
+            log.error(f"Config file does not exists {config_path}")
+            exit(101)
+
+        with open(config_path, 'rt') as f:
+            config_str = f.read()
+
+        config : ConfigType = yaml.load(config_str, Loader=yaml.Loader)
+
+        if 'includes' not in config:
+            config['includes'] = []
+
+        if 'extensions' not in config:
+            config['extensions'] = []
+
+        config['ROOT_FOLDER'] = os.path.dirname(config_path)
+
+        return config
+
     # Function that injects config constants into template/content
-    def inject_constants(self, constants, content):
+    def _inject_constants(self, constants, content):
         for key, value in constants.items():
             if isinstance(value, str) or str(value).replace('.','',1).isnumeric():
                 content = content.replace(f'~~{key}~~', value)
         return content
     
+
     def get_md_files(self):
         return [f for f in glob(f'{self.config["ROOT_FOLDER"]}/*.md')] + [f for f in glob(f'{self.config["ROOT_FOLDER"]}/+*/*.md')]
     
+
     def read_markdown_string(self, md_string):
         md_string = f'\n{md_string}'
         anchors = list(re.finditer('\r?\n-+\r?\n', md_string))
@@ -104,6 +115,7 @@ class Generator:
             raise WrongMarkdownFileException
         return (content, meta)
     
+
     def read_markdown_file(self, md_filename):
         try:
             with open(md_filename, 'rt') as f:
@@ -112,39 +124,80 @@ class Generator:
         except WrongMarkdownFileException as ex:
             raise WrongMarkdownFileException(md_filename)
 
-    def _get_extensions(self, 
-        conf : ConfigType, 
-        path : str
-    ) -> List[Extension]:
+
+    def module_exists(self, module_name : str):
+        try:
+            __import__(module_name)
+            return True
+        except ModuleNotFoundError as ex:
+            if ex.name == module_name:
+                return False
+            else:
+                raise ex
+
+
+    def _get_extension_class(self, module):
+        extension_class_name = [xx for xx in module.__dict__ if 'Extension' in xx][-1]
+        extension_class = getattr(module, extension_class_name)
+        return extension_class()
+
+
+    def _has_extension_class(self, module):
+        extension_class_name = [xx for xx in module.__dict__ if 'Extension' in xx]
+        if len(extension_class_name) > 0:
+            return True
+        else:
+            return False
+        
+
+    def _get_extension_class_from_file(self, extension_filename : str):
+        spec = importlib.util.spec_from_file_location('', extension_filename)
+        ext = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ext)
+        return self._get_extension_class(ext)
+
+    
+    def get_extensions(self) -> List[Extension]:
         extensions = []
-        if 'extensions' in conf:
-            for ext_filename in conf['extensions']:
-                extension_filename = f'{path}/{ext_filename}'
+        if 'extensions' in self.config:
+            for module_name in self.config['extensions']:
+                log.debug(f'Processing: {module_name.lower()}')
+                # Check if extension is in installed modules
+                if self.module_exists(module_name.lower()):
+                    module_tmp = __import__(module_name.lower(), fromlist=[None]) # load module
+                    extensions.append(self._get_extension_class(module_tmp))
+                    continue
+                # Check if extension is in built-in extensions
+                if self.module_exists(f'pie.extensions.{module_name.lower()}'):
+                    log.debug(f'Loading module: pie.extensions.{module_name.lower()}')
+                    module_tmp = __import__(f'pie.extensions.{module_name.lower()}', fromlist=['']) # load module
+                    if self._has_extension_class(module_tmp):
+                        extensions.append(self._get_extension_class(module_tmp))
+                        continue
+                    else: # maybe it is in folder
+                        module_tmp = __import__(f'pie.extensions.{module_name}.{module_name}', fromlist=[''])
+                        if self._has_extension_class(module_tmp):
+                            extensions.append(self._get_extension_class(module_tmp))
+                            continue
+                        else:
+                            log.warning(f'There is no extension class in `{module_tmp.__dict__["__name__"]}` module.')
+                    
+                # Check if extension is in website root folder
+                extension_filename = f'{self.config["ROOT_FOLDER"]}/extensions/{module_name}'
                 if Path(f'{extension_filename}.py').is_file():
                     extension_filename = f'{extension_filename}.py'
-                    pass
+                    extensions.append(self._get_extension_class_from_file(extension_filename))
+                    continue
                 elif Path(extension_filename).is_dir() and Path(extension_filename) / f'{Path(extension_filename).stem}.py':
                     extension_filename = Path(extension_filename) / f'{Path(extension_filename).stem}.py'
-                else:
-                    log.warning(f'Unrecognized extension: {ext_filename}')
+                    extensions.append(self._get_extension_class_from_file(extension_filename))
                     continue
-                log.debug(f'Processing: {ext_filename}')
-                spec = importlib.util.spec_from_file_location('', extension_filename)
-                ext = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(ext)
-                extension_class_name = [xx for xx in ext.__dict__ if 'Extension' in xx][-1]
-                extension_class = getattr(ext, extension_class_name)
-                ext_instance = extension_class()
-                extensions.append(ext_instance)
-                    
-
+                # If any above then error
+                log.error(f'Unrecognized extension: {module_name}')
         return extensions
 
-    # def md2html(self, md):
-    #     return marko.convert(md)
 
     def md2html(self, md):
-        
         converter = markdown.Markdown(
             extensions=[
                 # TODO: Przenieść do pliku konfiguracyjnego
@@ -195,17 +248,16 @@ class Generator:
         )
         return html, toc
 
-    def get_extensions(self, conf):
-        # TODO: f'./extensions' to be replaced with proper package folder
-        # TODO: extensions from inside the root website folder could be also loaded
-        # TODO: extensions installed as separate packages could also be loaded
-        return self._get_extensions(conf, f'./extensions')
-    
-    def generate(self):
+
+    def generate(self, **kwargs):
+        self.config = {
+            **self.config,
+            **kwargs
+        }
         with console.status('[bold green] Generating...'):
             template_env = Environment(loader=FileSystemLoader(f'{self.config["ROOT_FOLDER"]}/'))
             shutil.rmtree(f'{self.config["PUBLIC_FOLDER"]}', ignore_errors=True)
-            for incl in self.includes:
+            for incl in self.config['includes']:
                 if os.path.isdir(f'{self.config["ROOT_FOLDER"]}/{incl}'):
                     shutil.rmtree(f'{self.config["PUBLIC_FOLDER"]}/{incl}', ignore_errors=True)
                     shutil.copytree(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}') # , dirs_exist_ok=True
@@ -217,7 +269,7 @@ class Generator:
             # =====================================================
             md_files = self.get_md_files()
             self.all_files = []
-            for md_file in tqdm(md_files):
+            for md_file in md_files:
                 content_str, meta_str = self.read_markdown_file(md_file)
 
                 meta_raw = yaml.load(meta_str, Loader=yaml.Loader)
@@ -234,39 +286,34 @@ class Generator:
                 })
 
             # Execute on_generation_start (global extensions)
-            for extension in self.get_extensions({'extensions':self.extensions}):
+            for extension in self.get_extensions():
                 on_generation_start = getattr(extension, 'on_generation_start', None)  
                 if on_generation_start is not None:
-                    extension.on_generation_start(self, self.config, self.all_files)
+                    extension.on_generation_start(self, self.all_files)
 
             console.log('[blue]Stage 1.  [/blue] Read *.md files: [green]COMPLETE[/green]')
 
             # ==================== STAGE 2 ========================
             # Inject constants into the meta and content
             # =====================================================
-
-            # Preparing config constants
-            # TODO: Poniższe to tylko podmianka np. ~~BASE_URL~~ 
-            # na URL podany w configu glownym
-            for file in tqdm(self.all_files):
-                #file['md_content'] = 
+            for file in self.all_files:
                 file['meta'] = {
-                    key:self.inject_constants(self.config, value) if isinstance(value, str) else value 
+                    key:self._inject_constants(self.config, value) if isinstance(value, str) else value 
                     for key, value in file['meta'].items()
                 }
-                file['content'] = self.inject_constants(self.config, file['content'])
+                file['content'] = self._inject_constants(self.config, file['content'])
 
-            for extension in self.get_extensions({'extensions':self.extensions}):
+            for extension in self.get_extensions():
                 preprocessing = getattr(extension, 'preprocessing', None)  
                 if preprocessing is not None:
-                    extension.preprocessing(self, self.config, self.all_files)
+                    extension.preprocessing(self, self.all_files)
 
             console.log('[blue]Stage 2.  [/blue] Preprocessing: [green]COMPLETE[/green]')
 
             # ==================== STAGE 3 ============================
             # Combine template and markdown., generate HTML, create TOC
             # =========================================================
-            for file in tqdm(self.all_files):
+            for file in self.all_files:
                 file['meta'] = file['meta']
                 # TODO: Generowanie HTMLa / parsowanie markdowna
                 body, toc = self.md2html(file['content'])
@@ -308,11 +355,10 @@ class Generator:
 
             console.log('[blue]Stage 3.  [/blue] HTML generation: [green]COMPLETE[/green]')
 
-            for extension in self.get_extensions({'extensions':self.extensions}):
+            for extension in self.get_extensions():
                 postprocessing = getattr(extension, 'postprocessing', None)  
                 if postprocessing is not None:
-                    pass
-                    extension.postprocessing(self, self.config, self.all_files)
+                    extension.postprocessing(self, self.all_files)
 
             console.log('[blue]Stage 3.1.[/blue] Postprocessing: [green]COMPLETE[/green]')
 
@@ -320,7 +366,7 @@ class Generator:
             # Save HTML files in destination directory
             # ==============================================
 
-            for file in tqdm(self.all_files):
+            for file in self.all_files:
                 # get destination folder
                 dest_filename = file['meta']['route'].replace(self.config['BASE_URL'], '')
                 dest_filename = re.sub(r'^/', '', dest_filename) # remove / from begining
@@ -340,11 +386,10 @@ class Generator:
                 file['dest_folder'] = dest_folder
 
             # Execute on_generation_end for each extension
-            for extension in self.get_extensions({'extensions':self.extensions}):
+            for extension in self.get_extensions():
                 on_generation_end = getattr(extension, 'on_generation_end', None)  
                 if on_generation_end is not None:
-                    pass
-                    extension.on_generation_end(self, self.config, self.all_files)
+                    extension.on_generation_end(self, self.all_files)
 
             
             with open(f'{self.config["PUBLIC_FOLDER"]}/pages.pickle', 'wb') as f:
