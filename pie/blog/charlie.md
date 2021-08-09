@@ -8,6 +8,9 @@ menu:
     order: 2
 panel:
   - type: toc
+tags: 
+  - movie
+  - art
 summary: What the hell is that? What is your motto here? 
 date: 2021-07-02
 ---

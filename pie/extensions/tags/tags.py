@@ -65,7 +65,7 @@ class TagsExtension(Extension):
                         }
         
         proper_tags = dict(filter(lambda x: x[0] not in tags_ignored, tags.items()))
-        tmp = list(map(lambda el: ({ # TODO: quite ugly
+        tmp = list(map(lambda el: ({
             'tag': el[0],
             'label': tags_map[el[0]]['label'] if el[0] in tags_map else el[0],
             'order': tags_map[el[0]]['order'] if el[0] in tags_map else 999,
@@ -88,7 +88,7 @@ class TagsExtension(Extension):
                 pages.append({
                     #'filename': filename,
                     'title': file['meta']['title'],
-                    'date': file['meta']['date'] if 'date' in file['meta'] else None,
+                    'date': file['meta']['date'].strftime('%Y-%m-%dT%H:%M:%S') if 'date' in file['meta'] else None,
                     'summary': file['meta']['summary'] if 'summary' in file['meta'] else '',
                     'route': file['meta']['route'],
                     #'author': tmp_page_conf['author'] if 'author' in tmp_page_conf else '',

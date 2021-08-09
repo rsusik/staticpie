@@ -1,4 +1,5 @@
 # DEPENDENCY: TAGS
+import os
 import yaml
 from typing import List
 
@@ -37,7 +38,7 @@ Articles:
     {{ page.meta.author }} <br />
     {{ page.meta.date }} <br />
     {{ page.meta.summary }} <br />
-    <a href="{{page.meta.route}}">{{ page.meta.route }}</a>
+    <a href="{{config['PROTOCOL']}}{{page.meta.route}}">{{ page.meta.route }}</a>
     </li>
 {% endfor %}
 </ul>
@@ -52,6 +53,11 @@ class PagelistExtension(Extension):
         # Get all tags
         if 'tags' not in generator.config:
             raise Exception("ERROR: Extension tags should be added before pagelist extension")
+
+        default_template_path = generator.config['ROOT_FOLDER'] + '/' + 'tpl_only_body.html'
+        if not os.path.isfile(default_template_path):
+            with open(default_template_path, 'wt') as f:
+                f.write(template_content)
 
         for tag in generator.config['tags']['tags']:
             tmp = template_meta.replace('!###!TAGS!###!', str([tag["tag"]]))

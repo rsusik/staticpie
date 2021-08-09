@@ -12,6 +12,8 @@ panel:
     content: <div style="margin:5px; border:3px dashed grey; padding:8px;">This is <strong>additional</strong> side panel entry.</div>
 summary: This post is my first post in this blog and I encourage you to read it.
 date: 2021-06-28
+tags:
+  - art
 ---
 
 # My first blog post

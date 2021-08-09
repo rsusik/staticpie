@@ -21,3 +21,13 @@ extensions:
     - search
     - mostrecent
     
+tags:
+    tags_ignored:
+        - movie
+    tags_map:
+        art: 
+            label: Article
+            order: 100
+        art2:
+            label: Annother article category
+            order: 101

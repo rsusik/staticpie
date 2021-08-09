@@ -11,6 +11,8 @@ panel:
     max_lvl: 2
 summary: Another blog post
 date: 2021-07-04
+tags:
+    - art2
 ---
 
 # My next blog post
