@@ -130,7 +130,7 @@ class Generator:
             __import__(module_name)
             return True
         except ModuleNotFoundError as ex:
-            if ex.name == module_name:
+            if ex.name == module_name or ex.name == '.'.join(module_name.split('.')[0:-1]):
                 return False
             else:
                 raise ex
