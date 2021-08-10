@@ -27,7 +27,6 @@ class Extension:
 
         Parameters:
         * generator - the generator that executes this function,
-        * config - global config,
         * files - list of files (dictionary).
         '''
         
@@ -43,7 +42,6 @@ class Extension:
 
         Parameters:
         * generator - the generator that executes this function,
-        * config - global config,
         * files - list of files (dictionary), the content is html.
         '''
 
@@ -59,7 +57,6 @@ class Extension:
 
         Paramters:
         * generator - the generator that executes this function,
-        * config - global config,
         * files - list of files (dictionary).
         '''
         pass
@@ -75,7 +72,6 @@ class Extension:
 
         Paramters:
         * generator - the generator that executes this function,
-        * config - global config,
         * files - list of files (dictionary).
         '''
         

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 import sys
 
@@ -105,7 +105,7 @@ import yaml
 def _valid_yaml_file(filename):
     with open(filename, 'r') as f:
         try:
-            yaml.load(f)
+            yaml.load(f, Loader=yaml.Loader)
             return True
         except yaml.YAMLError as exception:
             return False
@@ -116,11 +116,11 @@ def _get_config_path(
 ) -> Path:
     config_path  = args.c
     if config_path is None:
-        log.info('No config file was given.')
+        log.debug('No config file was given.')
         cwd = Path(os.getcwd())
         tmp = cwd / Path(f'{cwd.parts[-1]}.yaml')
         if tmp.is_file():
-            log.info(f'Found config file in current working directory {tmp}.')
+            log.debug(f'Found config file in current working directory {tmp}.')
             config_path = tmp
         else:
             log.error(f'There is no config file in current working directory.')
@@ -151,7 +151,7 @@ def _get_config_path(
             log.error(f'No config file found.')
             exit(104)
     else:
-        log.error(f'Config file doesn\'t exists or is NOT a valid yaml file {config_path}')
+        log.error(f'Config file doesn\'t exists or is NOT a valid yaml file ({config_path})')
         exit(104)
 
 
@@ -235,20 +235,24 @@ def main():
     
     parser = argparse.ArgumentParser(
         description='Piece of cake. Static site generator.', 
-        prog='pie'
-        #epilog=''
+        prog='pie',
+        epilog='''\
+Example:
+pie create website mywebsite
+pie serve mywebsite/mywebsite.yaml\
+''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    
-    subparsers = parser.add_subparsers(help='Action', dest='action')
+    subparsers = parser.add_subparsers(help='Action', dest='action', required=True)
 
-    # SERVE
+    # Serve
     parser_serve = subparsers.add_parser('serve', help='Run server')
     parser_serve.add_argument('-p', '--port', dest='port', type=str, help='Port', default='8080')
     parser_serve.add_argument('-c', '--config', dest='c', type=str, help='Config file')
     parser_serve.add_argument('-a', '--address', dest='address', type=str, help='Address', default='localhost')
     parser_serve.set_defaults(func=serve_action)
 
-    # DEPLOY
+    # Deploy
     parser_deploy = subparsers.add_parser('deploy', help='Generate the website')
     parser_deploy.add_argument('-c', '--config', dest='c', type=str, help='Config file')
     parser_deploy.add_argument('-d', '--directory', dest='dir', type=str, help='Deploy folder')
@@ -256,7 +260,7 @@ def main():
 
     # Create
     parser_create = subparsers.add_parser('create', help='Create website/element')
-    parser_create_subparsers = parser_create.add_subparsers(help='Entity name', dest='entity')
+    parser_create_subparsers = parser_create.add_subparsers(help='Entity name', dest='entity', required=True)
 
     # Create -> website
     parser_create_subparsers_website = parser_create_subparsers.add_parser('website', help='Create website in given folder')

@@ -1,13 +1,11 @@
-# where markdown files and templates are stored
-#ROOT_FOLDER: /home/ok/strony/staticpie/pie/blog # This is going to be removed from config and I will assume that the config is itself inside the root folder
-# where website is generated, preferable /tmp and absolute path
-PUBLIC_FOLDER: /home/ok/strony/staticpie/pie/blog_public
+# deployment folder
+PUBLIC_FOLDER: ./public_www
 # the URL used for deploy
-BASE_URL: superblog.com
+BASE_URL: www.example.com
 # the protocol http:// or https://
 PROTOCOL: http://
 
-# Folders that should be copied to public folder
+# Folders/files that should be copied to public folder
 includes:
     - assets
     - styles.css
@@ -20,13 +18,14 @@ extensions:
     - pagelist
     - search
     - mostrecent
-    
+
+# Extension config
 tags:
     tags_ignored:
         - movie
     tags_map:
-        art: 
-            label: Article
+        art:
+            label: Article # the `art` tag will be displayed as Article
             order: 100
         art2:
             label: Annother article category
