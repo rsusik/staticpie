@@ -22,10 +22,10 @@ setup(
     python_requires=">=3.8",
     entry_points={
         "console_scripts": [
-            "pie=pie:main",
+            "pie=pie.pie:main",
         ],
     },
-    package_data={'': ['blog/*']},
+    package_data={'': ['assets/*', 'assets/*/*', 'assets/*/*/*', 'assets/*/*/*/*', 'assets/*/*/*/*/*', 'assets/*/*/*/*/*/*']},
     install_requires=get_requirements(),
     package_dir={"": "."},
     packages=find_packages(where="."),

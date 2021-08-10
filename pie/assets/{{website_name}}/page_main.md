@@ -1,11 +1,11 @@
 ---
 route: ~~BASE_URL~~/
-title: My first post
+title: The main webpage
 template: index.html
-author: Robert
-menu: 
-    label: First
-    order: 1
+author: Put your name
+#menu:  # it wont appear in menu
+#    label: First
+#    order: 1
 panel:
   - type: toc
   - type: text
@@ -16,7 +16,7 @@ tags:
   - art
 ---
 
-# My first blog post
+# This is my main post
 
 ## Lorem ipsum
 

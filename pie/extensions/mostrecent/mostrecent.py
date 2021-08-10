@@ -24,7 +24,7 @@ class MostrecentExtension(Extension):
     ) -> None:
         
         pages_with_date = filter(lambda x: 'date' in x['meta'], files)
-        pages_with_date_sorted = sorted(pages_with_date, key=lambda x: x['meta']['date'])
+        pages_with_date_sorted = sorted(pages_with_date, key=lambda x: x['meta']['date'], reverse=True)
         pages_with_date_sorted_map = map(lambda file: {
             'title': file['meta']['title'],
             'date': file['meta']['date'],

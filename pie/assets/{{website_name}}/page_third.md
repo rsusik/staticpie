@@ -1,21 +1,21 @@
 ---
-route: ~~BASE_URL~~/next
-title: Markdown demo
+route: ~~BASE_URL~~/third
+title: Third article
 template: index.html
-author: Robert
+author: Put your name
 menu: 
-    label: Markdown demo
+    label: Third article
     order: 2
 panel:
   - type: toc
     max_lvl: 2
-summary: Another blog post
-date: 2021-07-04
+summary: This is my third article about something...
+date: 2021-07-12
 tags:
     - art2
 ---
 
-# My next blog post
+# Third article with the same content
 
 
 ## Lorem ipsum
