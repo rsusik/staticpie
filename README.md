@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/rsusik/staticpie/raw/master/staticpie.png" alt="StaticPIE" />
+    <img src="https://raw.githubusercontent.com/rsusik/staticpie/main/staticpie.png" alt="StaticPIE" />
 </p>
 <p align="center">
     <em>Simple and extensible static site generator written in Python.</em>
@@ -30,14 +30,14 @@ pip install staticpie
 pie create website mywebsite
 ```
 
-<img src="https://github.com/rsusik/staticpie/raw/master/create_website.png" />
+<img src="https://raw.githubusercontent.com/rsusik/staticpie/main/create_website.png" />
 
 ## Create page
 ```shell
 pie create page anotherpage
 ```
 
-<img src="https://github.com/rsusik/staticpie/raw/master/create_page.png" />
+<img src="https://raw.githubusercontent.com/rsusik/staticpie/main/create_page.png" />
 
 ## Edit page
 The pages are editable front matter markdown files.
@@ -58,7 +58,7 @@ The command will generate the website in public folder (given in config file), r
 
 After successfull execution of `serve` you should see screen similar to below:
 
-<img src="https://github.com/rsusik/staticpie/raw/master/serve.png" />
+<img src="https://raw.githubusercontent.com/rsusik/staticpie/main/serve.png" />
 
 Once the file is saved, the browser refreshes the website (or some parts of it).
 
@@ -69,7 +69,7 @@ The serve action generates the website for localhost. That means it replaces all
 pie deploy 
 ```
 
-<img src="https://github.com/rsusik/staticpie/raw/master/deploy.png" />
+<img src="https://raw.githubusercontent.com/rsusik/staticpie/main/deploy.png" />
 
 ## Configuration
 The configuration is a YAML file and contains following elements:
