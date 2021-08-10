@@ -14,7 +14,6 @@
 - [x] Most recent
 - [x] Markdown parsing
 - [x] Extensions
-- [ ] **Bug fixes (some bugs apeared in last commits)**s
 - [ ] Convert blog to template.
 - [ ] Add command that generates the example website. Maybe something like `pie create website`.
 - [ ] The same for adding markdown file. Maybe something like: `pie create page`.
@@ -61,11 +60,11 @@ includes:
 
 # Extensions
 extensions:
-    - menu.py
-    - tags.py
-    - plist.py
-    - search.py
-    - most_recent.py
+    - menu
+    - tags
+    - pagelist
+    - search
+    - mostrecent
 ```
 
 ## Extensions
