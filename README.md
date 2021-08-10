@@ -1,6 +1,17 @@
 <p align="center">
     <img src="staticpie.png" alt="StaticPIE" />
 </p>
+<p align="center">
+    <em>Simple and extensible static site generator written in Python.</em>
+</p>
+<p align="center">
+<a href="https://pypi.org/project/staticpie" target="_blank">
+    <img src="https://img.shields.io/pypi/v/staticpie?color=%2334D058&label=pypi%20package" alt="Package version">
+</a>
+<a href="https://github.com/rsusik/staticpie/blob/master/LICENSE" target="_blank">
+    <img src="https://img.shields.io/github/license/rsusik/staticpie" alt="Package version">
+</a>
+</p>
 
 ## Features
 - simplicity
