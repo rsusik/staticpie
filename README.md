@@ -20,10 +20,13 @@
 - jinja2 templates
 - front matter markdown
 
+
 ## Installation
 ```shell
 pip install staticpie
 ```
+
+**Note: At least Python 3.8 version is required.**
 
 ## Create a new website
 ```shell

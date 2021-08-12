@@ -292,7 +292,7 @@ class FSEventHandler(FileSystemEventHandler):
         super().on_modified(event)
         what = 'directory' if event.is_directory else 'file'
         log.info(f'Modified, {what}, {event.src_path}')
-        if self.generator.config["PUBLIC_FOLDER"] in event.src_path:
+        if os.path.abspath(self.generator.config["PUBLIC_FOLDER"]) in os.path.abspath(event.src_path):
             return
         if what == 'file':
             filename, file_extension = os.path.splitext(event.src_path)

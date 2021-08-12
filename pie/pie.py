@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 
 import sys
 
@@ -243,6 +243,7 @@ pie serve mywebsite/mywebsite.yaml\
 ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
+    parser.add_argument('-v', '--version', dest='version', action='version', version=f'Version: {__version__}')
     subparsers = parser.add_subparsers(help='Action', dest='action', required=True)
 
     # Serve
