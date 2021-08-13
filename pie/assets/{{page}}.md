@@ -4,19 +4,21 @@ title: {{page_name}} # provide the title
 template: index.html # provide jinja2 template for this website
 author: YOU
 menu: 
-    label: Menu label # this label will appear in menu
+    label: {{page_name}} # this label will appear in menu
     order: 2
 panel:
   - type: toc # toc will be available
 tags: 
-  - put_some_tags
-summary: Type here the summary
+  - put
+  - some
+  - tags
+summary: Write some summary here
 date: {{date}}
 ---
 
 # Header
 
-Some description
+Some content
 
 ## Section 1
 

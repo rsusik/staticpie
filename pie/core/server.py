@@ -261,21 +261,19 @@ class FSEventHandler(FileSystemEventHandler):
         super().on_moved(event)
         what = 'directory' if event.is_directory else 'file'
         self._generate_all()
-        #self.queue.append(f'{what}, from: {event.src_path} to: {event.dest_path}')
+        self.client_reload()
 
     def on_created(self, event):
         super().on_created(event)
         what = 'directory' if event.is_directory else 'file'
         self._generate_all()
-        #self.queue.append(f'{what}, {event.src_path}')
+        self.client_reload()
 
     def on_deleted(self, event):
         super().on_deleted(event)
-        # remove from all menus and all references
-        # the easiest -> generate everything
         what = 'directory' if event.is_directory else 'file'
         self._generate_all()
-        #self.queue.append(f'{what}, {event.src_path}')
+        self.client_reload()
 
     @staticmethod
     def get_dest_path(
@@ -291,9 +289,10 @@ class FSEventHandler(FileSystemEventHandler):
     def on_modified(self, event):
         super().on_modified(event)
         what = 'directory' if event.is_directory else 'file'
-        log.info(f'Modified, {what}, {event.src_path}')
+        log.debug(f'Modified, {what}, {event.src_path}')
         if os.path.abspath(self.generator.config["PUBLIC_FOLDER"]) in os.path.abspath(event.src_path):
             return
+        log.info(f'Modified, {what}, {event.src_path}')
         if what == 'file':
             filename, file_extension = os.path.splitext(event.src_path)
             file_extension = file_extension.lower()
