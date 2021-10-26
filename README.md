@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://raw.githubusercontent.com/rsusik/staticpie/main/staticpie.png" alt="StaticPIE" />
+    <img src="https://raw.githubusercontent.com/rsusik/staticpie/main/staticpie.png" style="width: 130pt;" alt="StaticPIE" />
 </p>
 <p align="center">
     <em>Simple and extensible static site generator written in Python.</em>
