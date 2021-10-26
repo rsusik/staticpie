@@ -13,8 +13,6 @@
 </a>
 </p>
 
-## **Note: This project was created only for my use case and I suggest using some popular widely used frameworks such as Hugo or Jekyll**
-
 ## Features
 - simplicity
 - extensibility
@@ -152,3 +150,7 @@ Writing a custom extension is straightforward and can be described in a few step
     * `on_generation_end`.
 
     The details can be found in `pie.core.extension.Extension` class.
+
+
+
+Note: This project was created only for my use case and I suggest using some popular widely used frameworks such as Hugo or Jekyll for production.
