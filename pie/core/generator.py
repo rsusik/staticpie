@@ -89,7 +89,7 @@ class Generator:
         if 'extensions' not in config:
             config['extensions'] = []
 
-        config['ROOT_FOLDER'] = os.path.dirname(config_path)
+        config['ROOT_FOLDER'] = os.path.abspath(os.path.dirname(config_path))
 
         return config
 
