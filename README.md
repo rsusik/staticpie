@@ -13,6 +13,8 @@
 </a>
 </p>
 
+## **Note: This project was created only for my use case and I suggest using some popular widely used frameworks such as Hugo or Jekyll**
+
 ## Features
 - simplicity
 - extensibility
