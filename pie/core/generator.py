@@ -184,16 +184,20 @@ class Generator:
                     
                 # Check if extension is in website root folder
                 extension_filename = f'{self.config["ROOT_FOLDER"]}/extensions/{module_name}'
+                
                 if Path(f'{extension_filename}.py').is_file():
                     extension_filename = f'{extension_filename}.py'
+                    log.debug(f'Loading {extension_filename}')
                     extensions.append(self._get_extension_class_from_file(extension_filename))
                     continue
                 elif Path(extension_filename).is_dir() and Path(extension_filename) / f'{Path(extension_filename).stem}.py':
                     extension_filename = Path(extension_filename) / f'{Path(extension_filename).stem}.py'
+                    log.debug(f'Loading {extension_filename}')
                     extensions.append(self._get_extension_class_from_file(extension_filename))
                     continue
-                # If any above then error
+                # If none of above then error
                 log.error(f'Unrecognized extension: {module_name}')
+        log.debug(f'Found following extensions: {extensions}')
         return extensions
 
 
@@ -256,13 +260,22 @@ class Generator:
         }
         with console.status('[bold green] Generating...'):
             template_env = Environment(loader=FileSystemLoader(f'{self.config["ROOT_FOLDER"]}/'))
-            shutil.rmtree(f'{self.config["PUBLIC_FOLDER"]}', ignore_errors=True)
-            for incl in self.config['includes']:
-                if os.path.isdir(f'{self.config["ROOT_FOLDER"]}/{incl}'):
-                    shutil.rmtree(f'{self.config["PUBLIC_FOLDER"]}/{incl}', ignore_errors=True)
-                    shutil.copytree(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}') # , dirs_exist_ok=True
-                else:
-                    shutil.copy(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}')
+            
+            if Path(f'{self.config["PUBLIC_FOLDER"]}').exists():
+                for objname in glob(f'{self.config["PUBLIC_FOLDER"]}/*'):
+                    try:
+                        if objname[-4:] == '.git':
+                            print(f'Ignoring .git folder in {self.config["PUBLIC_FOLDER"]}')
+                            continue
+                        if os.path.isdir(objname):
+                            shutil.rmtree(objname, ignore_errors=True)
+                        else:
+                            os.remove(objname)
+                    except Exception as e:
+                        print(f'Unable to remove {objname}. {e}')
+                        raise(e)
+            else:
+                os.mkdir(f'{self.config["PUBLIC_FOLDER"]}')
 
             # ==================== STAGE 1 ========================
             # Read all files and store in list (meta is dictionary)
@@ -292,6 +305,7 @@ class Generator:
                     extension.on_generation_start(self, self.all_files)
 
             console.log('[blue]Stage 1.  [/blue] Read *.md files: [green]COMPLETE[/green]')
+
 
             # ==================== STAGE 2 ========================
             # Inject constants into the meta and content
@@ -340,7 +354,8 @@ class Generator:
                     **{
                         'body': body,
                         'config': self.config,
-                        'meta': file['meta']
+                        'meta': file['meta'],
+                        'data': file['data'] if 'data' in file else None,
                     },
                 })
 
@@ -392,9 +407,23 @@ class Generator:
                     extension.on_generation_end(self, self.all_files)
 
             
-            with open(f'{self.config["PUBLIC_FOLDER"]}/pages.pickle', 'wb') as f:
-                pickle.dump(self.all_files, f, pickle.HIGHEST_PROTOCOL)
+            # with open(f'{self.config["PUBLIC_FOLDER"]}/pages.pickle', 'wb') as f:
+            #     pickle.dump(self.all_files, f, pickle.HIGHEST_PROTOCOL)
 
             console.log('[blue]Stage 4.  [/blue] Finishing tasks: [green]COMPLETE[/green]')
+
+
+            # ==================== STAGE 1.1 ==========================
+            # Remove PUBLIC_FOLDER and copy files from includes
+            # =========================================================
+            
+            for incl in self.config['includes']:
+                if os.path.isdir(f'{self.config["ROOT_FOLDER"]}/{incl}'):
+                    shutil.rmtree(f'{self.config["PUBLIC_FOLDER"]}/{incl}', ignore_errors=True)
+                    shutil.copytree(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}') # , dirs_exist_ok=True
+                else:
+                    shutil.copy(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}')
+            console.log('[blue]Stage 5.  [/blue] Clean PUBLIC_FOLDER and copy files: [green]COMPLETE[/green]')
+
 
         return True

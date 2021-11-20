@@ -1,8 +1,8 @@
 from rich.console import Console
 console = Console()
 
-from rich.traceback import install
-install(show_locals=True)
+# from rich.traceback import install
+# install(show_locals=True)
 
 import logging
 from rich.logging import RichHandler
