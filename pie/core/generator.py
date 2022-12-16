@@ -327,6 +327,7 @@ class Generator:
             # ==================== STAGE 3 ============================
             # Combine template and markdown., generate HTML, create TOC
             # =========================================================
+            tpl_cache = {}
             for file in self.all_files:
                 file['meta'] = file['meta']
                 # TODO: Generowanie HTMLa / parsowanie markdowna
@@ -341,32 +342,42 @@ class Generator:
                 else:
                     raise Exception(f'ERROR: There is no template for {file["filename"]}')
 
-                if Path(tpl_filename).exists():
-                    with open(tpl_filename, 'rt') as f:
-                        tpl = f.read()
+                if tpl_filename in tpl_cache.keys():
+                    tpl = tpl_cache[tpl_filename]
                 else:
-                    raise Exception(f'ERROR: There is no template in {tpl_filename}')
-
+                    if Path(tpl_filename).exists():
+                        with open(tpl_filename, 'rt') as f:
+                            tpl = f.read()
+                            tpl_cache[tpl_filename] = tpl
+                    else:
+                        raise Exception(f'ERROR: There is no template in {tpl_filename}')
+                
                 # Generate HTML
-                #tpl = self.inject_constants(self.config, tpl)
-                template = template_env.from_string(tpl)
-                html = template.render({ # process template
-                    **{
-                        'body': body,
-                        'config': self.config,
-                        'meta': file['meta'],
-                        'data': file['data'] if 'data' in file else None,
-                    },
-                })
+                try:
+                    #tpl = self.inject_constants(self.config, tpl)
+                    template = template_env.from_string(tpl)
+                    html = template.render({ # process template
+                        **{
+                            'body': body,
+                            'config': self.config,
+                            'meta': file['meta'],
+                            'data': file['data'] if 'data' in file else None,
+                            'pages': self.all_files,
+                        },
+                    })
 
-                template = template_env.from_string(html)
-                html = template.render({ # process template instructions embedded in markdown
-                    **{
-                    'config': self.config,
-                    'meta': file['meta']
-                    }
-                })
-                file['content'] = html
+                    template = template_env.from_string(html)
+                    html = template.render({ # process template instructions embedded in markdown
+                        **{
+                        'config': self.config,
+                        'meta': file['meta']
+                        }
+                    })
+                    file['content'] = html
+                except Exception as ex:
+                    if 'meta' in file and 'route' in file['meta']:
+                        print(f'ERROR: Exception was thrown while processing {file["meta"]["route"]}')
+                    raise(ex)
 
             console.log('[blue]Stage 3.  [/blue] HTML generation: [green]COMPLETE[/green]')
 

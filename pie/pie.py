@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = '0.4.11'
+__version__ = '0.4.13'
 
 import sys
 
@@ -46,7 +46,10 @@ def serve(
     #http_folder : str,
     websockets_host : str,
     websockets_port : str,
-    generator : Generator
+    generator       : Generator,
+    ssl             : bool = False, 
+    ssl_certfile    : str = None, 
+    ssl_keyfile     : str = None
 ) -> ServeArgs:
     for _ in range(3):
         if is_port_open(http_host, http_port):
@@ -73,13 +76,15 @@ def serve(
         BASE_URL = f'{http_host}:{http_port}'
     )
 
-    th2 = threading.Thread(target=server.serve_http, args=[http_host, http_port, generator.config['PUBLIC_FOLDER'], websockets_host, websockets_port]) # serve_http(http_host, http_port, http_folder, websockets_host, websockets_port)
+    th2 = threading.Thread(target=server.serve_http, args=[http_host, http_port, generator.config['PUBLIC_FOLDER'], websockets_host, websockets_port, ssl, ssl_certfile, ssl_keyfile]) # serve_http(http_host, http_port, http_folder, websockets_host, websockets_port)
     th2.start()
 
     th = threading.Thread(target=server.serve_websockets, args=[generator, websockets_host, websockets_port]) # serve_websockets(config)
     th.start()
 
-    webbrowser.open(f'http://{http_host}:{http_port}')
+    url_address = f'http{"s" if ssl else ""}://{http_host}:{http_port}'
+
+    webbrowser.open(url_address)
 
     return {
         'status': True,
@@ -175,10 +180,13 @@ def serve_action(
         int(args.port),
         'localhost',
         8011,
-        generator
+        generator,
+        args.ssl,
+        args.ssl_certfile,
+        args.ssl_keyfile
     )
     if serve_out['status'] == True:
-        rprint(Panel(f"[bold green]Serving at: http://{serve_out['http_host']}:{serve_out['http_port']}", title="Summary"))
+        rprint(Panel(f"[bold green]Serving at: http{'s' if args.ssl else ''}://{serve_out['http_host']}:{serve_out['http_port']}", title="Summary"))
     else:
         rprint(Panel(f"[bold red]Error occured, exiting.", title="Summary"))
 
@@ -251,6 +259,9 @@ pie serve mywebsite/mywebsite.yaml\
     parser_serve.add_argument('-p', '--port', dest='port', type=str, help='Port', default='8080')
     parser_serve.add_argument('-c', '--config', dest='c', type=str, help='Config file')
     parser_serve.add_argument('-a', '--address', dest='address', type=str, help='Address', default='localhost')
+    parser_serve.add_argument('--ssl', help='Use HTTPS', action='store_true')
+    parser_serve.add_argument('--certfile', dest='ssl_certfile', type=str, help='Certfile required if SSL', default=None)
+    parser_serve.add_argument('--keyfile', dest='ssl_keyfile', type=str, help='Keyfile required if SSL', default=None)
     parser_serve.set_defaults(func=serve_action)
 
     # Deploy
@@ -275,6 +286,11 @@ pie serve mywebsite/mywebsite.yaml\
     parser_create_subparsers_page.set_defaults(func=create_page_action)
 
     args = parser.parse_args()
+    
+    # Check additional conditions
+    if args.ssl and (args.ssl_certfile is None or args.ssl_keyfile is None):
+        parser.error('--ssl requires --certfile and --keyfile')
+
     args.func(args)
 
 

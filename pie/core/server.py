@@ -12,7 +12,7 @@ import socketserver
 import websockets
 import http.server
 from http import HTTPStatus
-
+import ssl
 import psutil
 
 from watchdog.observers.polling import PollingObserver
@@ -163,16 +163,45 @@ class LiveReloadHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             f.close()
             raise
 
-def serve_http(http_host="localhost", http_port=8080, http_folder='./', websockets_host='localhost', websockets_port=8012):
-    Handler = partial(
+
+class SSLTCPServer(socketserver.TCPServer):
+    def __init__(self, server_address, handler, certfile, keyfile, bind_and_activate=True):
+        socketserver.TCPServer.__init__(self, server_address, handler, bind_and_activate)
+        self.certfile = certfile
+        self.keyfile = keyfile
+
+    def get_request(self):
+        sock, addr = self.socket.accept()
+        stream = ssl.wrap_socket(
+            sock,
+            server_side=True,
+            certfile=self.certfile,
+            keyfile=self.keyfile, 
+            ssl_version=ssl.PROTOCOL_TLSv1_2, 
+            ca_certs=None, 
+            do_handshake_on_connect=True, 
+            suppress_ragged_eofs=True, 
+            ciphers='ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK'
+        )
+        return stream, addr
+
+def serve_http(http_host="localhost", http_port=8080, http_folder='./', websockets_host='localhost', websockets_port=8012, ssl=False, ssl_certfile=None, ssl_keyfile=None):
+    handler = partial(
         LiveReloadHTTPRequestHandler, 
         directory=http_folder,
         websockets_host=websockets_host,
         websockets_port=websockets_port
     )
-    with socketserver.TCPServer((http_host, http_port), Handler) as httpd:
-        log.info(f'Serving at http://{http_host}:{http_port}')
-        httpd.serve_forever()
+    if not ssl:
+        with socketserver.TCPServer((http_host, http_port), handler) as httpd:
+            log.info(f'Serving at http://{http_host}:{http_port}')
+            httpd.serve_forever()
+    else:
+        if ssl_keyfile is None or ssl_certfile is None:
+            raise Exception('Error: ssl_certfile and ssl_keyfile are required')
+        with SSLTCPServer((http_host, http_port), handler, ssl_certfile, ssl_keyfile, True) as httpd:
+            log.info(f'Serving at https://{http_host}:{http_port} using ({ssl_certfile} and {ssl_keyfile})')
+            httpd.serve_forever()
 
 
 async def remove_disconnected(clients):
