@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = '0.4.13'
+__version__ = '0.4.15'
 
 import sys
 
@@ -288,7 +288,7 @@ pie serve mywebsite/mywebsite.yaml\
     args = parser.parse_args()
     
     # Check additional conditions
-    if args.ssl and (args.ssl_certfile is None or args.ssl_keyfile is None):
+    if hasattr(args, 'ssl') and any([not hasattr(args, attr) for attr in ['ssl_certfile', 'ssl_keyfile']]):
         parser.error('--ssl requires --certfile and --keyfile')
 
     args.func(args)

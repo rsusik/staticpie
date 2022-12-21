@@ -392,6 +392,9 @@ class Generator:
             # Save HTML files in destination directory
             # ==============================================
 
+            shutil.rmtree(f'{self.config["PUBLIC_FOLDER"]}')
+            os.makedirs(f'{self.config["PUBLIC_FOLDER"]}', exist_ok=True)
+
             for file in self.all_files:
                 # get destination folder
                 dest_filename = file['meta']['route'].replace(self.config['BASE_URL'], '')
@@ -429,11 +432,30 @@ class Generator:
             # =========================================================
             
             for incl in self.config['includes']:
-                if os.path.isdir(f'{self.config["ROOT_FOLDER"]}/{incl}'):
-                    shutil.rmtree(f'{self.config["PUBLIC_FOLDER"]}/{incl}', ignore_errors=True)
-                    shutil.copytree(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}') # , dirs_exist_ok=True
+                if '->' in incl:
+                    src, dest = incl.split('->')
+
+                    if src[-1] == '*':
+                        if dest[-1] != '/':
+                            dest += '/'
+                        os.makedirs(f'{self.config["PUBLIC_FOLDER"]}/{dest}', exist_ok=True)
+                        for el in glob(src):
+                            copy_to = el[len(src)-1:]
+                            if os.path.isdir(f'{self.config["ROOT_FOLDER"]}/{el}'):
+                                shutil.copytree(f'{self.config["ROOT_FOLDER"]}/{el}', f'{self.config["PUBLIC_FOLDER"]}/{dest}/{copy_to}', dirs_exist_ok=True) # , dirs_exist_ok=True
+                            else:
+                                shutil.copy(f'{self.config["ROOT_FOLDER"]}/{el}', f'{self.config["PUBLIC_FOLDER"]}/{dest}/{copy_to}')
+                    else:
+                        if os.path.isdir(f'{self.config["ROOT_FOLDER"]}/{src}'):
+                            shutil.copytree(f'{self.config["ROOT_FOLDER"]}/{src}', f'{self.config["PUBLIC_FOLDER"]}/{dest}', dirs_exist_ok=True) # , dirs_exist_ok=True
+                        else:
+                            shutil.copy(f'{self.config["ROOT_FOLDER"]}/{src}', f'{self.config["PUBLIC_FOLDER"]}/{dest}')                        
                 else:
-                    shutil.copy(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}')
+                    if os.path.isdir(f'{self.config["ROOT_FOLDER"]}/{incl}'):
+                        shutil.rmtree(f'{self.config["PUBLIC_FOLDER"]}/{incl}', ignore_errors=True)
+                        shutil.copytree(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}') # , dirs_exist_ok=True
+                    else:
+                        shutil.copy(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}')
             console.log('[blue]Stage 5.  [/blue] Clean PUBLIC_FOLDER and copy files: [green]COMPLETE[/green]')
 
 
