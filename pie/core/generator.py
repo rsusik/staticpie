@@ -287,6 +287,16 @@ class Generator:
 
                 meta_raw = yaml.load(meta_str, Loader=yaml.Loader)
 
+                # pages are visible by default
+                if 'visible' in meta_raw and not any([
+                    str(meta_raw['visible']).lower() == 'true',
+                    str(meta_raw['visible']).lower() == '1',
+                    str(meta_raw['visible']).lower() == 'visible',
+                    str(meta_raw['visible']).lower() == 'yes',
+                ]):
+                    console.log(f"Skipping {md_file}")
+                    continue
+
                 #meta_hash = hashlib.md5(meta_str.encode()).hexdigest()
                 #content_hash = hashlib.md5(content_str.encode()).hexdigest()
 
@@ -329,8 +339,6 @@ class Generator:
             # =========================================================
             tpl_cache = {}
             for file in self.all_files:
-                file['meta'] = file['meta']
-                # TODO: Generowanie HTMLa / parsowanie markdowna
                 body, toc = self.md2html(file['content'])
                 file['meta']['toc'] = toc
 
@@ -449,7 +457,7 @@ class Generator:
                         if os.path.isdir(f'{self.config["ROOT_FOLDER"]}/{src}'):
                             shutil.copytree(f'{self.config["ROOT_FOLDER"]}/{src}', f'{self.config["PUBLIC_FOLDER"]}/{dest}', dirs_exist_ok=True) # , dirs_exist_ok=True
                         else:
-                            shutil.copy(f'{self.config["ROOT_FOLDER"]}/{src}', f'{self.config["PUBLIC_FOLDER"]}/{dest}')                        
+                            shutil.copy(f'{self.config["ROOT_FOLDER"]}/{src}', f'{self.config["PUBLIC_FOLDER"]}/{dest}')
                 else:
                     if os.path.isdir(f'{self.config["ROOT_FOLDER"]}/{incl}'):
                         shutil.rmtree(f'{self.config["PUBLIC_FOLDER"]}/{incl}', ignore_errors=True)
