@@ -72,8 +72,10 @@ def serve(
         log.error('All the checked ports for websocket are already in use.')
         return {'status': False}
 
+    url_address = f'http{"s" if ssl else ""}://{http_host}:{http_port}'
+
     generator.generate(
-        BASE_URL = f'{http_host}:{http_port}'
+        BASE_URL = url_address
     )
 
     th2 = threading.Thread(target=server.serve_http, args=[http_host, http_port, generator.config['PUBLIC_FOLDER'], websockets_host, websockets_port, ssl, ssl_certfile, ssl_keyfile]) # serve_http(http_host, http_port, http_folder, websockets_host, websockets_port)
@@ -82,7 +84,6 @@ def serve(
     th = threading.Thread(target=server.serve_websockets, args=[generator, websockets_host, websockets_port]) # serve_websockets(config)
     th.start()
 
-    url_address = f'http{"s" if ssl else ""}://{http_host}:{http_port}'
 
     webbrowser.open(url_address)
 
@@ -247,7 +248,7 @@ def main():
         epilog='''\
 Example:
 pie create website mywebsite
-pie serve mywebsite/mywebsite.yaml\
+pie serve -c mywebsite.yaml --ssl --certfile ssl.crt --keyfile ssl.key\
 ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -288,7 +289,7 @@ pie serve mywebsite/mywebsite.yaml\
     args = parser.parse_args()
     
     # Check additional conditions
-    if hasattr(args, 'ssl') and any([not hasattr(args, attr) for attr in ['ssl_certfile', 'ssl_keyfile']]):
+    if hasattr(args, 'ssl') and any([not hasattr(args, attr) or getattr(args, attr) is None for attr in ['ssl_certfile', 'ssl_keyfile']]):
         parser.error('--ssl requires --certfile and --keyfile')
 
     args.func(args)

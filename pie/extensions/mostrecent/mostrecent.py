@@ -22,16 +22,20 @@ class MostrecentExtension(Extension):
         generator : Generator, 
         files : List[FilePreType]
     ) -> None:
-        
-        pages_with_date = filter(lambda x: 'date' in x['meta'], files)
+    
+        pages_with_date = list(filter(lambda x: 'date' in x['meta'], files))
         pages_with_date_sorted = sorted(pages_with_date, key=lambda x: x['meta']['date'], reverse=True)
-        pages_with_date_sorted_map = map(lambda file: {
+        
+        pages_with_date_sorted_map = list(map(lambda file: {
             'title': file['meta']['title'],
             'date': file['meta']['date'],
             'summary': self.cut(file['meta']['summary'], 60) if 'summary' in file['meta'] else '',
             'author': file['meta']['author'] if 'author' in file['meta'] else '',
+            'image': file['meta']['image'] if 'image' in file['meta'] else '',
             'route': file['meta']['route'],
-        }, pages_with_date_sorted)
-
+            'meta': file['meta']
+        }, pages_with_date_sorted))
+        
         generator.config['mostrecent'] = list(pages_with_date_sorted_map)
+        
 
