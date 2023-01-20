@@ -261,6 +261,9 @@ class Generator:
         with console.status('[bold green] Generating...'):
             template_env = Environment(loader=FileSystemLoader(f'{self.config["ROOT_FOLDER"]}/'))
             
+            # ===================== STAGE 0 ===========================
+            # Remove PUBLIC_FOLDER
+            # =========================================================
             if Path(f'{self.config["PUBLIC_FOLDER"]}').exists():
                 for objname in glob(f'{self.config["PUBLIC_FOLDER"]}/*'):
                     try:
@@ -435,8 +438,8 @@ class Generator:
             console.log('[blue]Stage 4.  [/blue] Finishing tasks: [green]COMPLETE[/green]')
 
 
-            # ==================== STAGE 1.1 ==========================
-            # Remove PUBLIC_FOLDER and copy files from includes
+            # ==================== STAGE 4.1 ==========================
+            # Copy files from includes
             # =========================================================
             
             for incl in self.config['includes']:
