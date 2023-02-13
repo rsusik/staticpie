@@ -37,7 +37,7 @@ class SearchExtension(Extension):
                 ))
             ) if 'content' in file and file['content'].strip() != '' else ''
             search_pages.append({
-                "url"    : generator.config['PROTOCOL'] + file['meta']['route'],
+                "url"    : file['meta']['route'],
                 'title'  : file['meta']['title'],
                 'author' : file['meta']['author'] if 'author' in file['meta'] else '',
                 'summary': file['meta']['summary'] if 'summary' in file['meta'] else '',

@@ -13,4 +13,4 @@ tags_map = {
     }
 }
 
-tags_ignored = list(set(['some', 'tags', 'to', 'ignore']))
+tags_ignored = ['some', 'tags', 'to', 'ignore']

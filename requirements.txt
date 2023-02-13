@@ -7,6 +7,7 @@ websockets>=9
 watchdog>=2
 pymdown-extensions>=8
 rich>=10
+ncache
 
 
 # Jinja2==3.0.1

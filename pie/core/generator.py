@@ -1,5 +1,8 @@
 from glob import glob
+import hashlib
+import json
 from pathlib import Path
+import time
 from jinja2 import Template, Environment, FileSystemLoader
 import markdown
 import re
@@ -10,19 +13,20 @@ import importlib
 import pickle
 import datetime
 from time import sleep
-from typing import Dict, List, TypedDict # Python 3.8
+from typing import Any, Dict, List, TypedDict # Python 3.8
 
 from pie.core.utils import *
 
 from pathlib import Path
 from pie.core.utils import log
+from ncache import Cache
 
 
 class ConfigType(TypedDict):
     ROOT_FOLDER: str
     PUBLIC_FOLDER: str
     BASE_URL: str
-    PROTOCOL: str
+    nocache: bool
     includes: List[str]
     extensions: List[str]
 
@@ -82,6 +86,9 @@ class Generator:
             config_str = f.read()
 
         config : ConfigType = yaml.load(config_str, Loader=yaml.Loader)
+
+        if 'nocache' not in config:
+            config['nocache'] = False
 
         if 'includes' not in config:
             config['includes'] = []
@@ -253,11 +260,23 @@ class Generator:
         return html, toc
 
 
+
+
     def generate(self, **kwargs):
         self.config = {
             **self.config,
             **kwargs
         }
+        
+        start = time.time()
+        
+        if "cache_path" not in self.config or self.config["cache_path"] is None:
+            cache_filename = f'{self.config["ROOT_FOLDER"]}/.cache.pickle'
+        else:
+            cache_filename = self.config["cache_path"]
+        self.cache = Cache(cache_filename, self.config['nocache'])
+        self.cache.load_cache()
+        
         with console.status('[bold green] Generating...'):
             template_env = Environment(loader=FileSystemLoader(f'{self.config["ROOT_FOLDER"]}/'))
             
@@ -278,7 +297,7 @@ class Generator:
                         print(f'Unable to remove {objname}. {e}')
                         raise(e)
             else:
-                os.mkdir(f'{self.config["PUBLIC_FOLDER"]}')
+                os.makedirs(f'{self.config["PUBLIC_FOLDER"]}')
 
             # ==================== STAGE 1 ========================
             # Read all files and store in list (meta is dictionary)
@@ -287,29 +306,30 @@ class Generator:
             self.all_files = []
             for md_file in md_files:
                 content_str, meta_str = self.read_markdown_file(md_file)
+                try:
+                    _hash = self.cache.get_hash((content_str, meta_str))
+                    _data = self.cache.get_value(_hash)
+                except Cache.NoCacheValue:
+                    meta_raw = yaml.load(meta_str, Loader=yaml.Loader)
 
-                meta_raw = yaml.load(meta_str, Loader=yaml.Loader)
+                    # pages are visible by default
+                    if 'visible' in meta_raw and not any([
+                        str(meta_raw['visible']).lower() == 'true',
+                        str(meta_raw['visible']).lower() == '1',
+                        str(meta_raw['visible']).lower() == 'visible',
+                        str(meta_raw['visible']).lower() == 'yes',
+                    ]):
+                        console.log(f"Skipping {md_file}")
+                        continue
 
-                # pages are visible by default
-                if 'visible' in meta_raw and not any([
-                    str(meta_raw['visible']).lower() == 'true',
-                    str(meta_raw['visible']).lower() == '1',
-                    str(meta_raw['visible']).lower() == 'visible',
-                    str(meta_raw['visible']).lower() == 'yes',
-                ]):
-                    console.log(f"Skipping {md_file}")
-                    continue
+                    _data = {
+                        'filename': md_file,
+                        'content': content_str,
+                        'meta': meta_raw
+                    }
+                    self.cache.set_value(_hash, _data)
 
-                #meta_hash = hashlib.md5(meta_str.encode()).hexdigest()
-                #content_hash = hashlib.md5(content_str.encode()).hexdigest()
-
-                self.all_files.append({
-                    'filename': md_file,
-                    # 'meta_hash': meta_hash,
-                    # 'content_hash': content_hash,
-                    'content': content_str,
-                    'meta': meta_raw
-                })
+                self.all_files.append(_data)
 
             # Execute on_generation_start (global extensions)
             for extension in self.get_extensions():
@@ -317,7 +337,7 @@ class Generator:
                 if on_generation_start is not None:
                     extension.on_generation_start(self, self.all_files)
 
-            console.log('[blue]Stage 1.  [/blue] Read *.md files: [green]COMPLETE[/green]')
+            console.log(f'[blue]Stage 1.  [/blue] Read *.md files: [green]COMPLETE[/green] ({round(time.time() - start, 4)}s)')
 
 
             # ==================== STAGE 2 ========================
@@ -329,20 +349,28 @@ class Generator:
                     for key, value in file['meta'].items()
                 }
                 file['content'] = self._inject_constants(self.config, file['content'])
-
+            
             for extension in self.get_extensions():
                 preprocessing = getattr(extension, 'preprocessing', None)  
                 if preprocessing is not None:
                     extension.preprocessing(self, self.all_files)
 
-            console.log('[blue]Stage 2.  [/blue] Preprocessing: [green]COMPLETE[/green]')
+            console.log(f'[blue]Stage 2.  [/blue] Preprocessing: [green]COMPLETE[/green] ({round(time.time() - start, 4)}s)')
 
             # ==================== STAGE 3 ============================
             # Combine template and markdown., generate HTML, create TOC
             # =========================================================
             tpl_cache = {}
+
+
+            
             for file in self.all_files:
-                body, toc = self.md2html(file['content'])
+                try:
+                    _hash = self.cache.get_hash(file['content'])
+                    body, toc = self.cache.get_value(_hash)
+                except Cache.NoCacheValue:
+                    body, toc = self.md2html(file['content'])
+                    self.cache.set_value(_hash, (body, toc))
                 file['meta']['toc'] = toc
 
                 # Processing template file
@@ -366,38 +394,43 @@ class Generator:
                 # Generate HTML
                 try:
                     #tpl = self.inject_constants(self.config, tpl)
-                    template = template_env.from_string(tpl)
-                    html = template.render({ # process template
-                        **{
-                            'body': body,
-                            'config': self.config,
-                            'meta': file['meta'],
-                            'data': file['data'] if 'data' in file else None,
-                            'pages': self.all_files,
-                        },
-                    })
+                    try:
+                        _hash = self.cache.get_hash((tpl, self.config, file))
+                        html = self.cache.get_value(_hash)
+                    except Cache.NoCacheValue:
+                        template = template_env.from_string(tpl)
+                        html = template.render({ # process template
+                            **{
+                                'body': body,
+                                'config': self.config,
+                                'meta': file['meta'],
+                                'data': file['data'] if 'data' in file else None,
+                                'pages': self.all_files,
+                            },
+                        })
 
-                    template = template_env.from_string(html)
-                    html = template.render({ # process template instructions embedded in markdown
-                        **{
-                        'config': self.config,
-                        'meta': file['meta']
-                        }
-                    })
+                        template = template_env.from_string(html)
+                        html = template.render({ # process template instructions embedded in markdown
+                            **{
+                            'config': self.config,
+                            'meta': file['meta']
+                            }
+                        })
+                        self.cache.set_value(_hash, html)
                     file['content'] = html
                 except Exception as ex:
                     if 'meta' in file and 'route' in file['meta']:
                         print(f'ERROR: Exception was thrown while processing {file["meta"]["route"]}')
                     raise(ex)
 
-            console.log('[blue]Stage 3.  [/blue] HTML generation: [green]COMPLETE[/green]')
+            console.log(f'[blue]Stage 3.  [/blue] HTML generation: [green]COMPLETE[/green] ({round(time.time() - start, 4)}s)')
 
             for extension in self.get_extensions():
                 postprocessing = getattr(extension, 'postprocessing', None)  
                 if postprocessing is not None:
                     extension.postprocessing(self, self.all_files)
 
-            console.log('[blue]Stage 3.1.[/blue] Postprocessing: [green]COMPLETE[/green]')
+            console.log(f'[blue]Stage 3.1.[/blue] Postprocessing: [green]COMPLETE[/green] ({round(time.time() - start, 4)}s)')
 
             # ==================== STAGE 4 =================
             # Save HTML files in destination directory
@@ -435,7 +468,10 @@ class Generator:
             # with open(f'{self.config["PUBLIC_FOLDER"]}/pages.pickle', 'wb') as f:
             #     pickle.dump(self.all_files, f, pickle.HIGHEST_PROTOCOL)
 
-            console.log('[blue]Stage 4.  [/blue] Finishing tasks: [green]COMPLETE[/green]')
+            console.log(f'[blue]Stage 4.  [/blue] Finishing tasks: [green]COMPLETE[/green] ({round(time.time() - start, 4)}s)')
+
+
+            self.cache.save_cache()
 
 
             # ==================== STAGE 4.1 ==========================
@@ -468,6 +504,7 @@ class Generator:
                     else:
                         shutil.copy(f'{self.config["ROOT_FOLDER"]}/{incl}', f'{self.config["PUBLIC_FOLDER"]}/{incl}')
             console.log('[blue]Stage 5.  [/blue] Clean PUBLIC_FOLDER and copy files: [green]COMPLETE[/green]')
-
+            end = time.time()
+            console.log('Generation time: ', end - start)
 
         return True

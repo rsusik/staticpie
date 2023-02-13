@@ -39,7 +39,7 @@ Articles:
     {{ page.meta.author }} <br />
     {{ page.meta.date }} <br />
     {{ page.meta.summary }} <br />
-    <a href="{{config['PROTOCOL']}}{{page.meta.route}}">{{ page.meta.route }}</a>
+    <a href="{{page.meta.route}}">{{ page.meta.route }}</a>
     </li>
 {% endfor %}
 </ul>
